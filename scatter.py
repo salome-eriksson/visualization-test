@@ -4,6 +4,8 @@ import pandas as pd
 import hvplot.pandas
 import holoviews as hv
 from functools import reduce
+from bokeh.io import output_notebook
+from ipywidgets import interact, fixed, Dropdown, Checkbox, ToggleButtons, Text
 
 from bokeh.plotting import figure
 
@@ -77,3 +79,17 @@ def generate_scatterplot(properties, xalg = "", yalg = "",
             size=75, alpha=0.75, transforms=transformation, hover_cols=['domain', 'problem']))
         counter = counter+1
     return reduce((lambda x, y: x * y), plots)
+
+def generate_interactive_scatterplot(properties, xalg, yalg,
+                xattribute, yattribute, 
+                relative, xscale, yscale):
+    output_notebook()    
+    interact(generate_scatterplot,
+             properties=fixed(properties),
+             xalg = Text(value=xalg),
+             yalg = Text(value=yalg),
+             xattribute = Dropdown(options=properties.numeric_attributes, value=xattribute, description = "x Attribute"),
+             yattribute = Dropdown(options=properties.numeric_attributes, value=yattribute, description = "y Attribute"),
+             relative = Checkbox(value=relative, description = "relative"),
+             xscale = ToggleButtons(options=["log", "linear"], value=xscale, description = "x scale"),
+             yscale = ToggleButtons(options=["log", "linear"], value=yscale, sescription = "y scale"))
