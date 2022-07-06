@@ -42,17 +42,6 @@ class PlotData:
 MARKERS = ["+", "x", "*", "y"]
 COLORS = ["red", "blue", "teal", "orange", "purple", "lime", "gray"]
 
-def test_scatter(properties):
-    xalg = "issue1045-base-seq-opt-bjolp-opt"
-    yalg = "issue1045-v2-seq-opt-bjolp-opt"
-    attribute = "search_time"
-    xcolumn = "{}_{}".format(xalg, attribute)
-    ycolumn = "{}_{}".format(yalg, attribute)
-    # ~ p = figure()
-    # ~ p.scatter(x=properties.data[xcolumn], y=properties.data[ycolumn])
-    p = properties.data.hvplot.scatter(x=xcolumn, y=ycolumn)
-    return p
-
 def generate_scatterplot(properties, xalg = "", yalg = "",
                 xattribute = "search_time", yattribute = "search_time", 
                 relative = False, xscale = "log", yscale = "log"):
@@ -84,7 +73,7 @@ def generate_scatterplot(properties, xalg = "", yalg = "",
             transformation[ycolumn] = hv.dim(ycolumn)/hv.dim(xcolumn)
         plots.append(properties.data.hvplot.scatter(x=xcolumn, y=ycolumn,
             label=name, xlabel=xlabel, ylabel=ylabel, logx=logx, logy=logy,
-            frame_width = 800, frame_height = 800, marker = MARKERS[counter%len(MARKERS)], color = COLORS[counter%len(COLORS)],
+            frame_width = 600, frame_height = 600, marker = MARKERS[counter%len(MARKERS)], color = COLORS[counter%len(COLORS)],
             size=75, alpha=0.75, transforms=transformation, hover_cols=['domain', 'problem']))
         counter = counter+1
     return reduce((lambda x, y: x * y), plots)
