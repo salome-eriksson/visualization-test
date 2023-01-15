@@ -1,95 +1,134 @@
-import json
-import math
-import pandas as pd
-import hvplot.pandas
-import holoviews as hv
-from functools import reduce
-from bokeh.io import output_notebook
-from ipywidgets import interact, fixed, Dropdown, Checkbox, ToggleButtons, Text
+#! /usr/bin/env python3
 
-from bokeh.plotting import figure
+import math
+import numpy as np
+import param
+import pandas as pd
+import holoviews as hv
+import hvplot.pandas
+import panel as pn
+
+from algorithm_selector import AlgorithmSelectorReplace, AlgorithmSelectorExplicit
+from report import Report
+
 
 hv.extension('bokeh')
 
-class PlotData:
-    def __init__(self, filename):
-        self.data = pd.read_json(filename, orient="index")
-        self.data = self.data.set_index(["algorithm","domain","problem"])
+MARKERS = ["circle", "square", "triangle", "asterisk", "diamond", "cross", "star", "inverted_triangle", "plus", "x", "hex", "y",
+           "circle_cross", "square_cross", "diamond_cross",
+           "circle_dot", "square_dot", "triangle_dot", "diamond_dot", "hex_dot", "star_dot",
+           "circle_x", "square_x", "circle_y", "square_pin", "triangle_pin"]
+COLORS = ["black", "red", "blue", "teal", "orange", "purple", "olive", "lime"]
 
-        self.algorithms = list(set(self.data.index.get_level_values(0)))
-        self.domains = list(set(self.data.index.get_level_values(1)))
-        self.attributes = self.data.columns.values.tolist()
-        self.numeric_attributes = [x for x in self.attributes if pd.api.types.is_numeric_dtype(self.data.dtypes[x])]
-
-        self.data = self.data.unstack(level=-3)
-        self.data.columns = self.data.columns.get_level_values(1) + "_" + self.data.columns.get_level_values(0)
-
-
-    def get_version_config_pairs(self, v1, v2):
-        ret = []
-        v1 = v1+"-"
-        v2 = v2+"-"
-        for alg in self.algorithms:
-            if v1 in alg:
-                v2alg = alg.replace(v1,v2)
-                name = alg.replace(v1,"")
-                assert(v2alg in self.algorithms)
-                ret.append((alg,v2alg, name))
-        return ret
-        
-    def get_all_configs(self):
-        return [(x,x,x) for x in self.algorithms]
-        
-        
-MARKERS = ["+", "x", "*", "y"]
-COLORS = ["red", "blue", "teal", "orange", "purple", "lime", "gray"]
-
-def generate_scatterplot(properties, xalg = "", yalg = "",
-                xattribute = "search_time", yattribute = "search_time", 
-                relative = False, xscale = "log", yscale = "log"):
-    config_pairs = []
-    logx = True if xscale == "log" else False
-    logy = True if yscale == "log" else False
-    xlabel = "{} {}".format(xattribute, xalg)
-    ylabel = "{} {}".format(yattribute, yalg)
+class Scatterplot(Report):
+    xattribute = param.Selector()
+    yattribute = param.Selector()
+    relative = param.Boolean(default = False)
+    xscale = param.Selector(default = "log", objects = ["log","linear"])
+    yscale = param.Selector(default = "log", objects = ["log","linear"])
+    groupby = param.Selector(default = "name", objects = ["name","domain"])
+    fill_alpha = param.Number(default = 0.0, bounds=(0.0,1.0))
+    marker_size = param.Integer(default = 75, bounds = (5,250))
+    xsize = param.Integer(default = 500)
+    ysize = param.Integer(default = 500)
+    algorithm_selector = param.Selector()
     
-    if xalg == "":
-        config_pairs = [(x,x,x) for x in properties.algorithms]
-    else:
-        for alg in properties.algorithms:
-            if xalg in alg:
-                if yalg == "":
-                    config_pairs.append((alg,alg,alg))
-                else:
-                    alg2 = alg.replace(xalg, yalg)
-                    assert(alg2 in properties.algorithms)
-                    config_pairs.append((alg, alg2, alg.replace(xalg, "").replace("--","-")))
+    def __init__(self, experiment_data, **params):
+        super().__init__(experiment_data, **params)
+        algorithm_selectors = []
+        xalg = params['xalg_string'] if 'xalg_string' in params else ""
+        yalg = params['yalg_string'] if 'yalg_string' in params else ""
+        algorithm_pairs = params['algorithm_pairs'] if 'algorithm_pairs' in params else dict()
+        algorithm_selectors = [
+          AlgorithmSelectorReplace(
+            experiment_data.algorithms, xalg = xalg, yalg = yalg,
+            name="select algorithm pairs based on replacing a substring"
+          ),
+          AlgorithmSelectorExplicit(
+            experiment_data.algorithms, algorithm_pairs,
+            name="select algorithm pairs explicitly"
+          )
+        ]
+        # ~ algorithm_selectors =[
+          # ~ AlgorithmSelectorReplace(experiment_data.algorithms, name="select algorithm pairs based on replacing a substring"),
+          # ~ AlgorithmSelectorExplicit(experiment_data.algorithms, name="select algorithm pairs explicitly")
+        # ~ ]
+        self.param.algorithm_selector.objects = algorithm_selectors
+        self.algorithm_selector = algorithm_selectors[0]
+        self.set_experiment_data_dependent_parameters()
+        
+    def update_experiment_data(self, experiment_data):
+        super().update_experiment_data(experiment_data)
+        self.set_experiment_data_dependent_parameters()
+        
+    def set_experiment_data_dependent_parameters(self):
+        self.param.xattribute.objects = self.experiment_data.numeric_attributes
+        self.param.yattribute.objects = self.experiment_data.numeric_attributes
+        for algorithm_selector in self.param.algorithm_selector.objects:
+            algorithm_selector.update_algorithms(self.experiment_data.algorithms)
 
-    plots = []
-    counter = 0
-    for xalg,yalg,name in config_pairs:
-        xcolumn = "{}_{}".format(xalg, xattribute)
-        ycolumn = "{}_{}".format(yalg, yattribute)
-        transformation = dict()
-        if relative:
-            transformation[ycolumn] = hv.dim(ycolumn)/hv.dim(xcolumn)
-        plots.append(properties.data.hvplot.scatter(x=xcolumn, y=ycolumn,
-            label=name, xlabel=xlabel, ylabel=ylabel, logx=logx, logy=logy,
-            frame_width = 600, frame_height = 600, marker = MARKERS[counter%len(MARKERS)], color = COLORS[counter%len(COLORS)],
-            size=75, alpha=0.75, transforms=transformation, hover_cols=['domain', 'problem']))
-        counter = counter+1
-    return reduce((lambda x, y: x * y), plots)
+    @param.depends('algorithm_selector', 'algorithm_selector.config_pairs', 'xattribute', 'yattribute', 'relative', 'xscale', 'yscale', 'groupby', 'fill_alpha', 'marker_size', 'xsize', 'ysize')
+    def data_view(self):
+        logx = True if self.xscale == "log" else False
+        logy = True if self.yscale == "log" else False
+        xlabel = self.xattribute
+        ylabel = self.yattribute
+        
 
-def generate_interactive_scatterplot(properties, xalg, yalg,
-                xattribute, yattribute, 
-                relative, xscale, yscale):
-    output_notebook()    
-    interact(generate_scatterplot,
-             properties=fixed(properties),
-             xalg = Text(value=xalg),
-             yalg = Text(value=yalg),
-             xattribute = Dropdown(options=properties.numeric_attributes, value=xattribute, description = "x Attribute"),
-             yattribute = Dropdown(options=properties.numeric_attributes, value=yattribute, description = "y Attribute"),
-             relative = Checkbox(value=relative, description = "relative"),
-             xscale = ToggleButtons(options=["log", "linear"], value=xscale, description = "x scale"),
-             yscale = ToggleButtons(options=["log", "linear"], value=yscale, sescription = "y scale"))
+        overall_frame = pd.DataFrame(columns=['name', 'domain', 'problem','x', 'y'])
+        overall_frame.set_index(['name','domain','problem'])
+        data = self.experiment_data.data
+        for name, (xalg, yalg) in self.algorithm_selector.config_pairs.items():
+            xcolumn = "{}_{}".format(xalg, self.xattribute)
+            ycolumn = "{}_{}".format(yalg, self.yattribute)
+            if xcolumn not in data or ycolumn not in data:
+                continue
+            new_frame = pd.DataFrame({'x':data[xcolumn], 'y':data[ycolumn], 'name':name})
+            new_frame.reset_index(inplace=True)
+            new_frame.set_index(['name','domain','problem'])
+            overall_frame = pd.concat([overall_frame,new_frame])
+        overall_frame = overall_frame.dropna(how='all')
+        if self.relative:
+            overall_frame['y'] = overall_frame['y']/overall_frame['x']
+
+        x_max = overall_frame['x'].max() if overall_frame['x'].max() is not np.nan else 1
+        x_min = overall_frame['x'].min() if overall_frame['x'].min() is not np.nan else 0.00001
+        y_max = overall_frame['y'].max() if overall_frame['y'].max() is not np.nan else 1
+        y_min = overall_frame['y'].min() if overall_frame['y'].min() is not np.nan else 0.00001
+        if self.xscale == "log" and x_max <= 0:
+            x_max = 0.0001
+        if self.xscale == "log" and x_min <= 0:
+            x_min = x_max/10.0
+        if self.yscale == "log" and y_max <= 0:
+            y_max = 0.0001
+        if self.yscale == "log" and y_min <= 0:
+            y_min = y_max/10.0
+        
+        x_failed = int(10 ** math.ceil(math.log10(x_max))) if self.xscale == "log" else x_max*1.1
+        y_failed = int(10 ** math.ceil(math.log10(y_max))) if self.yscale == "log" else y_max*1.1
+        overall_frame['x'] = overall_frame['x'].replace(np.nan,x_failed)
+        overall_frame['y'] = overall_frame['y'].replace(np.nan,y_failed)
+        plot = overall_frame.hvplot.scatter(x='x', y='y',
+                xlabel=xlabel, ylabel=ylabel, logx=logx, logy=logy, 
+                frame_width = self.xsize, frame_height = self.ysize, by=self.groupby,
+                hover_cols=['domain', 'problem'],
+                marker=MARKERS, fill_color=COLORS, line_color=COLORS,
+                fill_alpha=self.fill_alpha, size=self.marker_size)
+        plot.opts(legend_position='right')
+        plot.opts(xlim=(x_min*0.9, x_failed*1.1))
+        plot.opts(ylim=(y_min*0.9, y_failed*1.1))
+        max_overall = max(x_failed,y_failed)
+
+        helper_plots = hv.HLine(y_failed).opts(color="red", line_width=1)*hv.VLine(x_failed).opts(color="red", line_width=1)
+        if self.relative:
+            helper_plots = helper_plots * hv.HLine(1).opts(color="black", line_width=1)
+        else:
+            helper_plots = helper_plots * hv.Slope(slope=1, y_intercept=0).opts(color="black", line_width=1)
+
+        overall_plot = plot * helper_plots
+        overall_plot.opts(shared_axes=False)
+        return overall_plot
+
+
+    def param_view(self):
+        return pn.Column(pn.Param(self.param, name="Scatterplot", expand_button=False), self.algorithm_selector.param_view)
