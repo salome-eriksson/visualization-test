@@ -10,6 +10,7 @@ import panel as pn
 
 from algorithm_selector import AlgorithmSelectorReplace, AlgorithmSelectorExplicit
 from report import Report
+from experimentdata import ExperimentData
 
 
 hv.extension('bokeh')
@@ -33,42 +34,45 @@ class Scatterplot(Report):
     ysize = param.Integer(default = 500)
     algorithm_selector = param.Selector()
     
-    def __init__(self, experiment_data, **params):
-        super().__init__(experiment_data, **params)
-        algorithm_selectors = []
-        xalg = params['xalg_string'] if 'xalg_string' in params else ""
-        yalg = params['yalg_string'] if 'yalg_string' in params else ""
-        algorithm_pairs = params['algorithm_pairs'] if 'algorithm_pairs' in params else dict()
+    def __init__(self, **params):
+        # ~ print("Scatterplot init")
+        algorithm_pairs = params.pop('algorithm_pairs', [])
+        xalg = params.pop('xalg_string', "")
+        yalg = params.pop('yalg_string', "")
+        super().__init__(**params)
+        
+        algorithm_selector_pos = -1
+        if algorithm_pairs != []:
+            algorithm_selector_pos = 1
+        if xalg != "":
+            algorithm_selector_pos = 0
+        algorithm_selector_pos = max(0,algorithm_selector_pos)
         algorithm_selectors = [
           AlgorithmSelectorReplace(
-            experiment_data.algorithms, xalg = xalg, yalg = yalg,
+            self.experiment_data.algorithms, xalg = xalg, yalg = yalg,
             name="select algorithm pairs based on replacing a substring"
           ),
           AlgorithmSelectorExplicit(
-            experiment_data.algorithms, algorithm_pairs,
+            self.experiment_data.algorithms, algorithm_pairs,
             name="select algorithm pairs explicitly"
           )
         ]
-        # ~ algorithm_selectors =[
-          # ~ AlgorithmSelectorReplace(experiment_data.algorithms, name="select algorithm pairs based on replacing a substring"),
-          # ~ AlgorithmSelectorExplicit(experiment_data.algorithms, name="select algorithm pairs explicitly")
-        # ~ ]
         self.param.algorithm_selector.objects = algorithm_selectors
-        self.algorithm_selector = algorithm_selectors[0]
+        self.algorithm_selector = algorithm_selectors[algorithm_selector_pos]
         self.set_experiment_data_dependent_parameters()
-        
-    def update_experiment_data(self, experiment_data):
-        super().update_experiment_data(experiment_data)
-        self.set_experiment_data_dependent_parameters()
+        # ~ print("Scatterplot init end")
         
     def set_experiment_data_dependent_parameters(self):
+        # ~ print("Scatterplot set experiment data dependent parameters")
         self.param.xattribute.objects = self.experiment_data.numeric_attributes
         self.param.yattribute.objects = self.experiment_data.numeric_attributes
         for algorithm_selector in self.param.algorithm_selector.objects:
             algorithm_selector.update_algorithms(self.experiment_data.algorithms)
+        # ~ print("Scatterplot set experiment data dependent parameters end")
 
-    @param.depends('algorithm_selector', 'algorithm_selector.config_pairs', 'xattribute', 'yattribute', 'relative', 'xscale', 'yscale', 'groupby', 'fill_alpha', 'marker_size', 'xsize', 'ysize')
+    @param.depends('algorithm_selector', 'algorithm_selector.algorithm_pairs', 'xattribute', 'yattribute', 'relative', 'xscale', 'yscale', 'groupby', 'fill_alpha', 'marker_size', 'xsize', 'ysize')
     def data_view(self):
+        # ~ print("Scatterplot data view")
         logx = True if self.xscale == "log" else False
         logy = True if self.yscale == "log" else False
         xlabel = self.xattribute
@@ -78,7 +82,8 @@ class Scatterplot(Report):
         overall_frame = pd.DataFrame(columns=['name', 'domain', 'problem','x', 'y'])
         overall_frame.set_index(['name','domain','problem'])
         data = self.experiment_data.data
-        for name, (xalg, yalg) in self.algorithm_selector.config_pairs.items():
+        for (xalg, yalg, name) in self.algorithm_selector.algorithm_pairs:
+            # ~ print(f"Gathering point for {name}")
             xcolumn = "{}_{}".format(xalg, self.xattribute)
             ycolumn = "{}_{}".format(yalg, self.yattribute)
             if xcolumn not in data or ycolumn not in data:
@@ -88,9 +93,11 @@ class Scatterplot(Report):
             new_frame.set_index(['name','domain','problem'])
             overall_frame = pd.concat([overall_frame,new_frame])
         overall_frame = overall_frame.dropna(how='all')
+        # ~ print("Checking if relative")
         if self.relative:
             overall_frame['y'] = overall_frame['y']/overall_frame['x']
 
+        # ~ print("Computing min/max")
         x_max = overall_frame['x'].max() if overall_frame['x'].max() is not np.nan else 1
         x_min = overall_frame['x'].min() if overall_frame['x'].min() is not np.nan else 0.00001
         y_max = overall_frame['y'].max() if overall_frame['y'].max() is not np.nan else 1
@@ -103,11 +110,13 @@ class Scatterplot(Report):
             y_max = 0.0001
         if self.yscale == "log" and y_min <= 0:
             y_min = y_max/10.0
-        
+
+        # ~ print("computing failed values")
         x_failed = int(10 ** math.ceil(math.log10(x_max))) if self.xscale == "log" else x_max*1.1
         y_failed = int(10 ** math.ceil(math.log10(y_max))) if self.yscale == "log" else y_max*1.1
         overall_frame['x'] = overall_frame['x'].replace(np.nan,x_failed)
         overall_frame['y'] = overall_frame['y'].replace(np.nan,y_failed)
+        # ~ print("Building plot")
         plot = overall_frame.hvplot.scatter(x='x', y='y',
                 xlabel=xlabel, ylabel=ylabel, logx=logx, logy=logy, 
                 frame_width = self.xsize, frame_height = self.ysize, by=self.groupby,
@@ -119,6 +128,7 @@ class Scatterplot(Report):
         plot.opts(ylim=(y_min*0.9, y_failed*1.1))
         max_overall = max(x_failed,y_failed)
 
+        # ~ print("Creating helper plots")
         helper_plots = hv.HLine(y_failed).opts(color="red", line_width=1)*hv.VLine(x_failed).opts(color="red", line_width=1)
         if self.relative:
             helper_plots = helper_plots * hv.HLine(1).opts(color="black", line_width=1)
@@ -127,8 +137,12 @@ class Scatterplot(Report):
 
         overall_plot = plot * helper_plots
         overall_plot.opts(shared_axes=False)
+        # ~ print("Scatterplot data view end")
         return overall_plot
 
-
+    @param.depends('algorithm_selector')
     def param_view(self):
-        return pn.Column(pn.Param(self.param, name="Scatterplot", expand_button=False), self.algorithm_selector.param_view)
+        # ~ print("Scatterplot param view")
+        retcol = pn.Column(pn.Param(self.param, name="Scatterplot", expand_button=False), self.algorithm_selector.param_view)
+        # ~ print("Scatterplot param view return")
+        return retcol

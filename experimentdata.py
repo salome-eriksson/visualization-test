@@ -4,6 +4,7 @@ import pandas as pd
 
 class ExperimentData():
     def __init__(self, properties_file=""):
+        # ~ print(f"Experiment data init with properties file '{properties_file}'")
         self.algorithms = []
         self.domains = []
         self.attributes = []
@@ -22,6 +23,8 @@ class ExperimentData():
             
             self.data = self.data.unstack(level=-3)
             self.data.columns = self.data.columns.get_level_values(1) + "_" + self.data.columns.get_level_values(0)
-            print("Successfully loaded file {}".format(properties_file))
+            print(f"Successfully loaded file '{properties_file}'")
         except:
-            print("Could not open file {}".format(properties_file))
+            print(f"Could not open file '{properties_file}'")
+
+        # ~ print(f"Experiment data init with properties file '{properties_file}' end")
