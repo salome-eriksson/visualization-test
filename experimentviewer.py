@@ -2,6 +2,7 @@ import param
 import panel as pn
 
 from scatter import Scatterplot
+from table import Tablereport
 
 class ExperimentViewer(param.Parameterized):
     num_reports = param.Integer(default=0)
@@ -22,7 +23,7 @@ class ExperimentViewer(param.Parameterized):
             self.reports = self.reports[0:self.num_reports]
         elif self.num_reports > len(self.reports):
             for i in range(len(self.reports), self.num_reports):
-                report_types = [Scatterplot(name = "Scatterplot")]
+                report_types = [Scatterplot(name = "Scatterplot"),Tablereport(name = "Tablereport")]
                 self.reports.append(pn.widgets.Select(options=report_types))
         # ~ print("ExperimentViewer update num reports end")
 
