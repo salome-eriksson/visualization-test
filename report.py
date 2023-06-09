@@ -29,18 +29,9 @@ class Report(param.Parameterized):
         pass
 
     def param_view(self):
-        # ~ print("Report param view (return)")
-        return pn.Param()
+        print("Report param view (return)")
+        return pn.Param(self.param)
 
     def data_view(self):
-        # ~ print("Report data view (return)")
-        return hv.HLine(1).opts(color="red", line_width=2)
-
-    @param.depends()
-    def view(self):
-        # ~ print("Report view")
-        retrow = pn.Row()
-        retrow.append(self.param_view)
-        retrow.append(self.data_view)
-        # ~ print("Report view return")
-        return pn.Row(self.param_view, self.data_view)
+        print("Report data view (return)")
+        return pn.pane.Markdown("### Report")

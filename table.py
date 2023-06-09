@@ -35,10 +35,11 @@ class Tablereport(Report):
             selected_data = data[[x for x in data.columns.values if x in mapping.keys()]]
             selected_data = selected_data.rename(columns=mapping)
             return pn.widgets.DataFrame(value=selected_data, hierarchical=True, aggregators={'problem': self.aggregator},
-                                        width=self.width, height=self.height)
+                                          width=self.width, height=self.height)
+        else:
+            return pn.pane.Markdown("### Hello")
 
         
     #@param.depends('algorithm_selector')
     def param_view(self):
-        retcol = pn.Column(pn.Param(self.param))
-        return retcol
+        return pn.Param(self.param)
