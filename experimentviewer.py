@@ -11,7 +11,7 @@ class ReportViewer(param.Parameterized):
     def __init__(self, **params):
         super().__init__(**params)
         self.param.report.objects = [Scatterplot(name = "Scatterplot"),Tablereport(name = "Tablereport")]
-        self.report = self.param.report.objects[1]
+        self.report = self.param.report.objects[0]
 
     def viewer_param_view(self):
         return pn.Param(self.param, name="", expand_button=False)
