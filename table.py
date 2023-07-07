@@ -25,7 +25,6 @@ class Tablereport(Report):
         # ~ print("Scatterplot set experiment data dependent parameters")
         self.param.attribute.objects = self.experiment_data.attributes
 
-    #@param.depends('algorithm_selector', 'algorithm_selector.algorithm_pairs')
     def data_view(self):
         if not self.experiment_data.data.empty:
             mapping = dict()
@@ -39,7 +38,6 @@ class Tablereport(Report):
         else:
             return pn.pane.Markdown("### Hello")
 
-        
-    #@param.depends('algorithm_selector')
+    
     def param_view(self):
         return pn.Param(self.param)

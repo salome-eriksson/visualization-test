@@ -90,11 +90,8 @@ class Scatterplot(Report):
             self.param.ymin.precedence=None
             self.param.xmax.precedence=None
             self.param.ymax.precedence=None
-      
 
-    @param.depends('algorithm_selector', 'algorithm_selector.algorithm_pairs', 'xattribute', 'yattribute', 'relative',
-    'xscale', 'yscale', 'groupby', 'fill_alpha', 'marker_size', 'xsize', 'ysize', 'replace_zero', 'autoscale',
-    'xmin', 'xmax', 'ymin', 'ymax')
+      
     def data_view(self):
         # ~ print("Scatterplot data view")
         logx = True if self.xscale == "log" else False
@@ -134,10 +131,10 @@ class Scatterplot(Report):
 
         # ~ print("Computing min/max")
         if self.autoscale:
-            self.xmax = overall_frame['x'].max() if overall_frame['x'].max() is not np.nan else 1
-            self.xmin = overall_frame['x'].min() if overall_frame['x'].min() is not np.nan else 0.00001
-            self.ymax = overall_frame['y'].max() if overall_frame['y'].max() is not np.nan else 1
-            self.ymin = overall_frame['y'].min() if overall_frame['y'].min() is not np.nan else 0.00001
+            self.param.update(xmax = overall_frame['x'].max() if overall_frame['x'].max() is not np.nan else 1, 
+                              xmin = overall_frame['x'].min() if overall_frame['x'].min() is not np.nan else 0.00001, 
+                              ymax = overall_frame['y'].max() if overall_frame['y'].max() is not np.nan else 1, 
+                              ymin = overall_frame['y'].min() if overall_frame['y'].min() is not np.nan else 0.00001)
             if self.xscale == "log" and self.xmax <= 0:
                 self.xmax = 0.0001
             if self.xscale == "log" and self.xmin <= 0:
