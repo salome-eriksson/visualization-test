@@ -46,11 +46,7 @@ pn.state.location.sync(plot,
         'ysize' : 'ysize',
         'replace_zero' : 'replace_zero',
         'autoscale' : 'autoscale',
-        'xmin' : 'xmin',
-        'ymin' : 'ymin',
-        'xmax' : 'xmax',
-        'ymax' : 'ymax',
-        'algorithm_selector' : 'algorithm_selector'
-        # ~ 'algorithm_selector' : 'algorithm_selector'
+        'x_range' : 'x_range',
+        'y_range' : 'y_range'
     })
 view.servable()

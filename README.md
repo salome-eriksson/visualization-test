@@ -14,3 +14,7 @@ pip install notebook \
 pip install ipywidgets \
 jupyter nbextension enable --py widgetsnbextension \
 jupyter notebook
+
+
+To call the scatter server:
+panel serve scatter_server.py --allow-websocket-origin=<IP>:<port>
