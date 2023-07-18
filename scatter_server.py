@@ -10,7 +10,7 @@ explanation_string = """
             (2)or specify two versions (e.g. 'base' and 'v1').
             
             For (1), you need to enter your list into the field 'entries_list' such that each line
-            whitespace-separated arguents, which represents one comparison from arg1 on x
+            contains 3 whitespace-separated arguments that represent one comparison from arg1 on x
             to arg2 on y with legend entry arg3.<br>
             *Example:*<br>
             *lmcut ipdb lmcut-to-ipdb*<br>

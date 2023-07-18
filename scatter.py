@@ -83,7 +83,6 @@ class Scatterplot(Report):
         entries = []
         if self.entries_selection_mode == "explicit":
             for line in self.entries_list.splitlines():
-                print(str.split(line))
                 new_entry = tuple(str.split(line))
                 if len(new_entry) != 3:
                     print("wrong formatting")
