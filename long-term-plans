@@ -1,0 +1,28 @@
+TL;DR
+-----
+ - not host it ourselves
+ - allow adding python code to preprocess properties
+ - integrate in lab
+ - add tables (and more?)
+ - when sharing via link, it should not take 1min+ to load
+
+
+Details
+-------
+
+The current goal was to have an easy way to share a specific interactive
+scatterplot via URL, for example for linking it in the issue tracker. As it is
+currently set up (docker container hosted on ai-web) we can do exactly that,
+without anyone needing to install the necessary python packages or clone the
+repository.
+
+In the future, we want to make the tool more powerful, ideally to the point
+where it can be used as the "sole" tool for processing experiment data both
+for issues and papers. One important capability for this is to allow the
+user to specify how data from the properties file should be processed. This
+most likely needs to be done by specifying python code.
+The current setup does not easily allow this; instead a jupyter notebook setup
+is most likely best. These notebooks could also be hosted somewhere else. One
+thing to consider is that we still want to be able to easily share a plot (or
+similar) that other people can see by just clicking a link, and that doesn't
+require a 1 minute or more wait for the host to start a VM.
