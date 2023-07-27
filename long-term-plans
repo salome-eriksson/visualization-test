@@ -26,3 +26,11 @@ is most likely best. These notebooks could also be hosted somewhere else. One
 thing to consider is that we still want to be able to easily share a plot (or
 similar) that other people can see by just clicking a link, and that doesn't
 require a 1 minute or more wait for the host to start a VM.
+One intermediate solution both in terms of effort and usability would be to
+share python notebooks on https://ai.dmi.unibas.ch/_experiments/ They can be
+opened/edited in VS code locally, but we might have to look into what is
+necessary to set things up correctly (i.e., that lab and the visualizer scripts
+are available in the notebook). This might be interesting in combination
+with https://jupyterlite.readthedocs.io/en/latest/, which allows to run
+jupyter notebooks in the browser; but we would have to explore whether this is
+sufficient.
