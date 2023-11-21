@@ -13,29 +13,58 @@ from experimentdata import ExperimentData
 
 pn.extension('tabulator')
 
-def highlight_max(s):
-    print(s)
-    print(s.max())
-    val = (((s-s.min())/ (s.max()-s.min()))*255).fillna(0).astype(int)
-    return ['color: #00{:02x}{:02x}'.format(v,255-v) if s.max() != s.min() else '' for v in val]
 
 class Tablereport(Report):
     attribute = param.Selector()
-    aggregator = param.Selector(["sum", "mean", "min", "max"])
-    height = param.Integer(1000)
-    width = param.Integer(1500)
     algorithms = param.ListSelector()
+    active_domains = param.List(precedence=-1)
+    view_data = None
     
     def __init__(self, **params):
         print("TableReport init")
         super().__init__(**params)
+        
+    
+    def style_table_by_row(self, row):
+        is_aggregate = (row['problem'] == "")
+        numeric_values = pd.to_numeric(row,errors='coerce')
+        min_val = numeric_values.dropna().min()
+        max_val = numeric_values.dropna().max()
+        min_equal_max = max_val - min_val == 0
+        retarray = []
+        for elem in numeric_values:
+            formatting_string = ""
+            if not min_equal_max != 0 and pd.notna(elem):
+                val = ((elem - min_val) / (max_val-min_val)*255).astype(int)
+                formatting_string = "color: #00{:02x}{:02x};".format(val,255-val)
+            if is_aggregate:
+                formatting_string += "background-color: #d1d1e0;"
+            retarray.append(formatting_string)
+        return retarray
+        
+    def filter_by_active_domains(self, df, active_domains):
+        return df[df["domain"].isin(active_domains) | df["problem"].isin([""])]
+
+    def on_click_callback(self, e):
+        domain = self.view_data.iloc[e.row]["domain"]
+        if self.view_data.iloc[e.row]["problem"] != "":
+            return
+        tmp = [x for x in self.active_domains]
+        if domain in tmp:
+            tmp.remove(domain)
+        else:
+            tmp.append(domain)
+        self.active_domains = tmp
+
+
 
     def set_experiment_data_dependent_parameters(self):
         # ~ print("Scatterplot set experiment data dependent parameters")
-        self.param.attribute.objects = self.experiment_data.attributes        
+        self.param.attribute.objects = self.experiment_data.attributes
         self.param.algorithms.objects = self.experiment_data.algorithms
+        self.algorithms = self.experiment_data.algorithms
 
-    #@param.depends('algorithm_selector', 'algorithm_selector.algorithm_pairs')
+  
     def data_view(self):
         if not self.experiment_data.data.empty:
             mapping = dict()
@@ -44,12 +73,21 @@ class Tablereport(Report):
             data = self.experiment_data.data
             selected_data = data[[x for x in data.columns.values if x in mapping.keys()]]
             selected_data = selected_data.rename(columns=mapping)
-            return pn.widgets.DataFrame(value=selected_data, hierarchical=True, aggregators={'problem': self.aggregator},
-                                          width=self.width, height=self.height).style.apply(highlight_max, axis=1)
+            
+            #aggregate over domain
+            temp_data = selected_data.groupby(level=0).agg('sum')
+            temp_data['problem'] = ""
+            temp_data = temp_data.set_index('problem',append=True)
+            selected_data = pd.concat([selected_data,temp_data]).sort_index()
+            self.view_data = selected_data.reset_index(['domain', 'problem'])
+            
+            view = pn.widgets.Tabulator(value=self.view_data, show_index=False, disabled = True, pagination=None)
+            view.add_filter(pn.bind(self.filter_by_active_domains,active_domains=self.active_domains))
+            view.style.apply(func=self.style_table_by_row, axis=1)
+            view.on_click(self.on_click_callback)
+            return view
         else:
             return pn.pane.Markdown("### Hello")
 
-        
-    #@param.depends('algorithm_selector')
     def param_view(self):
         return pn.Param(self.param)
