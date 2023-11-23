@@ -4,9 +4,8 @@ import math
 import numpy as np
 import param
 import pandas as pd
-#import holoviews as hv
-#import hvplot.pandas
 import panel as pn
+from scipy.stats import gmean
 
 from report import Report
 from experimentdata import ExperimentData
@@ -16,32 +15,20 @@ pn.extension('tabulator')
 
 class Tablereport(Report):
     attribute = param.Selector()
-    algorithms = param.ListSelector()
     active_domains = param.List(precedence=-1)
-    view_data = None
+    #TODO: fix gmean
+    aggregator = param.Selector(["sum", "mean"])
+    view_data = pd.DataFrame()
     
     def __init__(self, **params):
-        print("TableReport init")
         super().__init__(**params)
         
-    
     def style_table_by_row(self, row):
-        is_aggregate = (row['problem'] == "")
-        numeric_values = pd.to_numeric(row,errors='coerce')
-        min_val = numeric_values.dropna().min()
-        max_val = numeric_values.dropna().max()
-        min_equal_max = max_val - min_val == 0
-        retarray = []
-        for elem in numeric_values:
-            formatting_string = ""
-            if not min_equal_max != 0 and pd.notna(elem):
-                val = ((elem - min_val) / (max_val-min_val)*255).astype(int)
-                formatting_string = "color: #00{:02x}{:02x};".format(val,255-val)
-            if is_aggregate:
-                formatting_string += "background-color: #d1d1e0;"
-            retarray.append(formatting_string)
-        return retarray
-        
+        pass
+    
+    def compute_view_data(self):
+        pass
+
     def filter_by_active_domains(self, df, active_domains):
         return df[df["domain"].isin(active_domains) | df["problem"].isin([""])]
 
@@ -55,31 +42,24 @@ class Tablereport(Report):
         else:
             tmp.append(domain)
         self.active_domains = tmp
-
+        
+    def aggregate_over_domain(self):
+        aggregated_data = self.view_data.groupby(level=0).agg(self.aggregator)
+        aggregated_data['problem'] = ""
+        aggregated_data = aggregated_data.set_index('problem',append=True)
+        self.view_data = pd.concat([aggregated_data,self.view_data]).sort_index().reset_index(['domain', 'problem'])
 
 
     def set_experiment_data_dependent_parameters(self):
-        # ~ print("Scatterplot set experiment data dependent parameters")
-        self.param.attribute.objects = self.experiment_data.attributes
-        self.param.algorithms.objects = self.experiment_data.algorithms
-        self.algorithms = self.experiment_data.algorithms
-
+        self.param.attribute.objects = self.experiment_data.numeric_attributes
+        self.attribute = self.experiment_data.numeric_attributes[0]
   
     def data_view(self):
         if not self.experiment_data.data.empty:
-            mapping = dict()
-            for alg in self.algorithms:
-                mapping[str(alg)+"_"+str(self.attribute)] = str(alg)
-            data = self.experiment_data.data
-            selected_data = data[[x for x in data.columns.values if x in mapping.keys()]]
-            selected_data = selected_data.rename(columns=mapping)
-            
-            #aggregate over domain
-            temp_data = selected_data.groupby(level=0).agg('sum')
-            temp_data['problem'] = ""
-            temp_data = temp_data.set_index('problem',append=True)
-            selected_data = pd.concat([selected_data,temp_data]).sort_index()
-            self.view_data = selected_data.reset_index(['domain', 'problem'])
+            self.compute_view_data()
+            if self.view_data.empty:
+                return
+            self.aggregate_over_domain()
             
             view = pn.widgets.Tabulator(value=self.view_data, show_index=False, disabled = True, pagination=None)
             view.add_filter(pn.bind(self.filter_by_active_domains,active_domains=self.active_domains))

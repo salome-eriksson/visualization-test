@@ -3,15 +3,16 @@ import panel as pn
 import copy
 
 from scatter import Scatterplot
-from table import Tablereport
+from absolutetable import AbsoluteTablereport
+from difftable import DiffTablereport
 
 class ReportViewer(param.Parameterized):
     report = param.Selector()
 
     def __init__(self, **params):
         super().__init__(**params)
-        self.param.report.objects = [Scatterplot(name = "Scatterplot"),Tablereport(name = "Tablereport")]
-        self.report = self.param.report.objects[0]
+        self.param.report.objects = [Scatterplot(name = "Scatterplot"),AbsoluteTablereport(name = "AbsoluteTablereport"),DiffTablereport(name = "DiffTablereport")]
+        self.report = self.param.report.objects[2]
 
     def viewer_param_view(self):
         return pn.Param(self.param, name="", expand_button=False)
