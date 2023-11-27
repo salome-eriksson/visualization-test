@@ -19,30 +19,34 @@ class DiffTablereport(Tablereport):
         super().__init__(**params)
 
     def style_table_by_row(self, row):
-        is_aggregate = (row['problem'] == "")
-        retarray = (["background-color: #d1d1e0;"] if is_aggregate else [""])*len(row)
-        if row[:1] < 0:
-          retarray[:1] += "color: red"
-        elif row[:1] > 0:
-          retarray[:1] += "color: green"
-        print(retarray)
+        retarray = ["background-color: #d1d1e0;" if row['problem'] == "" else ""] * len(row)
+        min_wins = False if self.attribute not in self.min_wins_by_attribute else self.min_wins_by_attribute[self.attribute]
+        color = 'black'
+        if (row[-1] > 0 and min_wins) or (row[-1] < 0 and not min_wins):
+            color = 'red'
+        elif (row[-1] < 0 and min_wins) or (row[-1] > 0 and not min_wins):
+            color= 'green'
+        retarray[-1] += f"color: {color}"
         return retarray
         
     def compute_view_data(self):
+        algs = []
         if not self.algorithm1 or not self.algorithm2:
-            self.data_view = pd.DataFrame()
-            return
+            self.view_data = pd.DataFrame()
+            return False
         mapping = dict()
         for alg in [self.algorithm1, self.algorithm2]:
-            mapping[str(alg)+"_"+str(self.attribute)] = str(alg)
+            name = str(alg)+"_"+str(self.attribute)
+            mapping[name] = str(alg)
+            algs.append(name)
         data = self.experiment_data.data
-        self.view_data = data[[x for x in data.columns.values if x in mapping.keys()]]
+        self.view_data = data[algs]
         self.view_data = self.view_data.rename(columns=mapping)
         if self.precentual:
             self.view_data["diff"] = (self.view_data[self.algorithm2] / self.view_data[self.algorithm1])-1
         else:
             self.view_data["diff"] = self.view_data[self.algorithm2] - self.view_data[self.algorithm1]
-
+        return True
 
     def set_experiment_data_dependent_parameters(self):
         super().set_experiment_data_dependent_parameters()
