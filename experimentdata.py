@@ -6,17 +6,19 @@ import pandas as pd
 class ExperimentData():
     def compute_ipc_score(self):
         print("computing ipc score")
-        lower_bounds = pd.read_json("lower_bounds.json", orient="index")
-        lower_bounds = lower_bounds.set_index(["domain","problem"])
+        upper_bounds = pd.read_json("upper_bounds.json", orient="index")
+        upper_bounds = upper_bounds.set_index(["domain","problem"])
         
         costs = self.data[[f"{alg}_cost" for alg in self.algorithms]]
-        costs_and_lb = pd.concat([costs,lower_bounds], axis=1).reindex(costs.index)
-        min_costs = costs_and_lb.min(axis=1)
+        costs_and_ub = pd.concat([costs,upper_bounds], axis=1).reindex(costs.index)
+        min_costs = costs_and_ub.min(axis=1)
+        min_costs_without_ub = costs.min(axis=1)
         
         for algorithm in self.algorithms:
             self.data[f"{algorithm}_ipc-sat-score"] = (min_costs/self.data[f"{algorithm}_cost"]).fillna(0)
-        self.attributes = sorted(self.attributes + ["ipc-sat-score"])
-        self.numeric_attributes = sorted(self.numeric_attributes + ["ipc-sat-score"])
+            self.data[f"{algorithm}_ipc-sat-score-no-planning-domains"] = (min_costs_without_ub/self.data[f"{algorithm}_cost"]).fillna(0)
+        self.attributes = sorted(self.attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
+        self.numeric_attributes = sorted(self.numeric_attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
         print("done computing ipc score")
   
     def __init__(self, properties_file=""):
