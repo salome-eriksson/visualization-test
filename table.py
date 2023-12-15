@@ -21,7 +21,7 @@ class Tablereport(Report):
     aggregate_only_over_common = param.Boolean(True)
     ignore_axiom_domains = param.Boolean(True)
     #TODO: fix gmean
-    aggregator = param.Selector(["sum", stats.gmean])
+    aggregator = param.Selector(["sum", "mean", stats.gmean])
     view_data = pd.DataFrame()
 
     min_wins_by_attribute = {

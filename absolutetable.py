@@ -41,10 +41,12 @@ class AbsoluteTablereport(Tablereport):
             self.view_data = pd.DataFrame()
             return False
         mapping = dict()
+        columns = []
         for alg in self.algorithms:
+            columns.append(str(alg)+"_"+str(self.attribute))
             mapping[str(alg)+"_"+str(self.attribute)] = str(alg)
         data = self.experiment_data.data
-        self.view_data = data[[x for x in data.columns.values if x in mapping.keys()]]
+        self.view_data = data[columns]
         self.view_data = self.view_data.rename(columns=mapping)
         return True
 
@@ -53,3 +55,6 @@ class AbsoluteTablereport(Tablereport):
         super().set_experiment_data_dependent_parameters()
         self.param.algorithms.objects = self.experiment_data.algorithms
         self.algorithms = self.experiment_data.algorithms
+
+    def param_view(self):
+        return pn.Param(self.param,  widgets= {"algorithms": {"type": pn.widgets.CrossSelector, "definition_order" : False}})

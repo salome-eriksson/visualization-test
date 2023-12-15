@@ -19,7 +19,6 @@ class ExperimentData():
             self.data[f"{algorithm}_ipc-sat-score-no-planning-domains"] = (min_costs_without_ub/self.data[f"{algorithm}_cost"]).fillna(0)
         self.attributes = sorted(self.attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
         self.numeric_attributes = sorted(self.numeric_attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
-        print("done computing ipc score")
   
     def __init__(self, properties_file=""):
         # ~ print(f"Experiment data init with properties file '{properties_file}'")
