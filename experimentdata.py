@@ -24,6 +24,7 @@ class ExperimentData():
         # ~ print(f"Experiment data init with properties file '{properties_file}'")
         self.algorithms = []
         self.domains = []
+        self.problems = dict()
         self.attributes = []
         self.numeric_attributes = [""]
         self.data = pd.DataFrame()
@@ -40,6 +41,9 @@ class ExperimentData():
             
             self.data = self.data.unstack(level=-3)
             self.data.columns = self.data.columns.get_level_values(1) + "_" + self.data.columns.get_level_values(0)
+            
+            for domain in self.domains:
+                self.problems[domain] = [x for x in self.data.loc[domain].index.get_level_values('problem')]
             
             self.compute_ipc_score()
             print(f"Successfully loaded file '{properties_file}'")

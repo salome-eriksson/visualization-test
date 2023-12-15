@@ -5,13 +5,14 @@ import copy
 from scatter import Scatterplot
 from absolutetable import AbsoluteTablereport
 from difftable import DiffTablereport
+from problemtable import ProblemTablereport
 
 class ReportViewer(param.Parameterized):
     report = param.Selector()
 
     def __init__(self, **params):
         super().__init__(**params)
-        self.param.report.objects = [Scatterplot(name = "Scatterplot"),AbsoluteTablereport(name = "AbsoluteTablereport"),DiffTablereport(name = "DiffTablereport")]
+        self.param.report.objects = [Scatterplot(name = "Scatterplot"),AbsoluteTablereport(name = "AbsoluteTablereport"),DiffTablereport(name = "DiffTablereport"),ProblemTablereport(name = "ProblemTablereport")]
         self.report = self.param.report.objects[2]
 
     def viewer_param_view(self):

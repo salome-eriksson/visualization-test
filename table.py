@@ -9,11 +9,10 @@ from scipy import stats
 
 from report import Report
 from experimentdata import ExperimentData
+from problemtable import ProblemTablereport
 
 pn.extension('tabulator')
-
-
-
+pn.extension('floatpanel')
 
 class Tablereport(Report):
     attribute = param.Selector()
@@ -60,6 +59,7 @@ class Tablereport(Report):
     
     def __init__(self, **params):
         super().__init__(**params)
+        self.placeholder = pn.Column(height=0, width=0)
         
     def style_table_by_row(self, row):
         pass
@@ -72,8 +72,16 @@ class Tablereport(Report):
 
     def on_click_callback(self, e):
         domain = self.view_data.iloc[e.row]["domain"]
-        if self.view_data.iloc[e.row]["problem"] != "" or domain not in self.experiment_data.domains:
+        problem = self.view_data.iloc[e.row]["problem"]
+        if domain not in self.experiment_data.domains:
             return
+            
+        if problem != "":
+            probreport = ProblemTablereport(experiment_data = self.experiment_data, domain = domain, problem = problem)
+            floatpanel = pn.layout.FloatPanel(probreport.data_view, name=f"{domain} - {problem}", contained=False, position='left-top', height=500)
+            self.placeholder[:] = [floatpanel]
+            return
+                        
         tmp = [x for x in self.active_domains]
         if domain in tmp:
             tmp.remove(domain)
@@ -116,4 +124,4 @@ class Tablereport(Report):
         return view
 
     def param_view(self):
-        return pn.Param(self.param)
+        return pn.Column(pn.Param(self.param), self.placeholder)

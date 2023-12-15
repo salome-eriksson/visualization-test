@@ -25,7 +25,7 @@ class Report(param.Parameterized):
         self.set_experiment_data_dependent_parameters()
         # ~ print("Report update experiment data end")
 
-    def set_experiment_data_dependent_parameters():
+    def set_experiment_data_dependent_parameters(self):
         pass
 
     def param_view(self):
