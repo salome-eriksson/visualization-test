@@ -180,6 +180,6 @@ class Scatterplot(Report):
     @param.depends('algorithm_selector')
     def param_view(self):
         # ~ print("Scatterplot param view")
-        retcol = pn.Column(pn.Param(self.param, name="Scatterplot", expand_button=False), self.algorithm_selector.param_view)
+        retcol = pn.Column(pn.Param(self.param, expand_button=False), self.algorithm_selector.param_view)
         # ~ print("Scatterplot param view return")
         return retcol
