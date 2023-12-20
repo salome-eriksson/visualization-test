@@ -21,7 +21,6 @@ class Tablereport(Report):
     ignore_axiom_domains = param.Boolean(True)
     #TODO: fix gmean
     aggregator = param.Selector(["sum", "mean", stats.gmean])
-    view_data = pd.DataFrame()
 
     min_wins_by_attribute = {
       "coverage": False,
@@ -58,8 +57,11 @@ class Tablereport(Report):
     ]
     
     def __init__(self, **params):
+        print("TableReport init")
         super().__init__(**params)
+        self.view_data = pd.DataFrame()
         self.placeholder = pn.Column(height=0, width=0)
+        print("TableReport init end")
         
     def style_table_by_row(self, row):
         pass
@@ -104,12 +106,15 @@ class Tablereport(Report):
 
 
     def set_experiment_data_dependent_parameters(self):
-        self.param.attribute.objects = self.experiment_data.numeric_attributes
+        print("TableReport set_experiment_data_dependent_parameters")
+        self.param.attribute.objects = ["--"] + self.experiment_data.numeric_attributes
         self.attribute = self.experiment_data.numeric_attributes[0]
+        print("TableReport set_experiment_data_dependent_parameters end")
   
     def data_view(self):
-        if self.experiment_data.data.empty or not self.compute_view_data():
-            return pn.pane.Markdown("### Hello")
+        print("TableReport data_view")
+        if not self.experiment_data or self.attribute == "--" or not self.compute_view_data():
+            return pn.pane.Markdown()
 
         if self.ignore_axiom_domains:
             for dom in set(self.axiom_domains) & set(self.experiment_data.domains):
@@ -121,7 +126,9 @@ class Tablereport(Report):
         view.add_filter(pn.bind(self.filter_by_active_domains,active_domains=self.active_domains))
         view.style.apply(func=self.style_table_by_row, axis=1)
         view.on_click(self.on_click_callback)
+        print("TableReport data_view end")
         return view
 
     def param_view(self):
+        print("TableReport param_view (end)")
         return pn.Column(pn.Param(self.param), self.placeholder)

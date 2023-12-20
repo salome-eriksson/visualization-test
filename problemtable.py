@@ -10,31 +10,37 @@ pn.extension('tabulator')
 
 
 class ProblemTablereport(Report):
-    domain = param.Selector()
-    problem = param.Selector()
+    domain = param.Selector(["--"])
+    problem = param.Selector(["--"])
 
-    def __init__(self, experiment_data = None, domain = "", problem = "", **params):
+    def __init__(self, **params):
+        print("ProblemTablereport init")
         super().__init__(**params)
-        self.experiment_data = experiment_data
-        if self.experiment_data:
-            self.set_experiment_data_dependent_parameters()
-        self.domain = domain
-        self.problem = problem
+        print("ProblemTablereport init end")
 
     def set_experiment_data_dependent_parameters(self):
-        self.param.domain.objects = self.experiment_data.domains
-        self.domain = self.experiment_data.domains[0]
+        print("ProblemTablereport set_experiment_data_dependent_parameters")
+        self.param.domain.objects = ["--"] + self.experiment_data.domains
+        self.param.problem.objects = ["--"]
+        self.param.update({
+            "domain" : self.param.domain.objects[0],
+            "problem": self.param.problem.objects[0]
+        })
+        print("ProblemTablereport set_experiment_data_dependent_parameters end")
     
     @param.depends('domain', watch=True)
     def update_problems(self):
-        if self.experiment_data:
-            self.param.problem.objects = self.experiment_data.problems[self.domain]
-            self.problem = self.experiment_data.problems[self.domain][0]
+        print("ProblemTablereport update_problems")
+        if self.domain != "--": 
+            self.param.problem.objects = ["--"] + self.experiment_data.problems[self.domain]
+            self.problem = self.param.problem.objects[0]
+        print("ProblemTablereport update_problems end")
 
     def data_view(self):
-        if not self.experiment_data or self.experiment_data.data.empty or self.domain == "" or self.problem == "":
-            return pn.pane.Markdown("### Hello")
-        row = self.experiment_data.data.loc[(self.domain, self.problem)]#.iloc[0]
+        print("ProblemTablereport data_view")
+        if self.problem == "--":
+            return pn.pane.Markdown()
+        row = self.experiment_data.data.loc[(self.domain, self.problem)]
         
         entries = dict()
         tabulator_formatters = dict()
@@ -46,8 +52,10 @@ class ProblemTablereport(Report):
         view_data = pd.DataFrame(entries)
         view_data.set_index("attribute")
         
-        view = pn.widgets.Tabulator(value=view_data, show_index=False, disabled = True, pagination=None, widths=250, formatters=tabulator_formatters)
-        return view
+        self.view = pn.widgets.Tabulator(value=view_data, show_index=False, disabled = True, pagination=None, widths=250, formatters=tabulator_formatters)
+        print("ProblemTablereport data_view end")
+        return self.view
             
     def param_view(self):
+        print("ProblemTablereport param_view (end)")
         return pn.Param(self.param)

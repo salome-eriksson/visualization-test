@@ -15,7 +15,7 @@ from experimentdata import ExperimentData
 
 hv.extension('bokeh')
 
-MARKERS = ["circle", "square", "triangle", "asterisk", "diamond", "cross", "star", "inverted_triangle", "plus", "x", "hex", "y",
+MARKERS = ["x","circle", "square", "triangle", "asterisk", "diamond", "cross", "star", "inverted_triangle", "plus", "x", "hex", "y",
            "circle_cross", "square_cross", "diamond_cross",
            "circle_dot", "square_dot", "triangle_dot", "diamond_dot", "hex_dot", "star_dot",
            "circle_x", "square_x", "circle_y", "square_pin", "triangle_pin"]
@@ -41,7 +41,7 @@ class Scatterplot(Report):
     algorithm_selector = param.Selector()
     
     def __init__(self, **params):
-        # ~ print("Scatterplot init")
+        print("Scatterplot init")
         algorithm_pairs = params.pop('algorithm_pairs', [])
         xalg = params.pop('xalg_string', "")
         yalg = params.pop('yalg_string', "")
@@ -66,17 +66,17 @@ class Scatterplot(Report):
         self.param.algorithm_selector.objects = algorithm_selectors
         self.algorithm_selector = algorithm_selectors[algorithm_selector_pos]
         self.set_experiment_data_dependent_parameters()
-        # ~ print("Scatterplot init end")
+        print("Scatterplot init end")
         
     def set_experiment_data_dependent_parameters(self):
-        # ~ print("Scatterplot set experiment data dependent parameters")
+        print("Scatterplot set experiment data dependent parameters")
         self.param.xattribute.objects = self.experiment_data.numeric_attributes
         self.xattribute = self.experiment_data.numeric_attributes[0]
         self.param.yattribute.objects = self.experiment_data.numeric_attributes
         self.yattribute = self.experiment_data.numeric_attributes[0]
         for algorithm_selector in self.param.algorithm_selector.objects:
             algorithm_selector.update_algorithms(self.experiment_data.algorithms)
-        # ~ print("Scatterplot set experiment data dependent parameters end")
+        print("Scatterplot set experiment data dependent parameters end")
 
     @param.depends('autoscale', watch=True)
     def set_scale_restrictions(self):
@@ -96,7 +96,7 @@ class Scatterplot(Report):
     'xscale', 'yscale', 'groupby', 'fill_alpha', 'marker_size', 'xsize', 'ysize', 'replace_zero', 'autoscale',
     'xmin', 'xmax', 'ymin', 'ymax')
     def data_view(self):
-        # ~ print("Scatterplot data view")
+        print("Scatterplot data view")
         logx = True if self.xscale == "log" else False
         logy = True if self.yscale == "log" else False
         xlabel = self.xattribute
@@ -174,12 +174,12 @@ class Scatterplot(Report):
 
         overall_plot = plot * helper_plots
         overall_plot.opts(shared_axes=False)
-        # ~ print("Scatterplot data view end")
+        print("Scatterplot data view end")
         return overall_plot
 
     @param.depends('algorithm_selector')
     def param_view(self):
-        # ~ print("Scatterplot param view")
+        print("Scatterplot param view")
         retcol = pn.Column(pn.Param(self.param, expand_button=False), self.algorithm_selector.param_view)
-        # ~ print("Scatterplot param view return")
+        print("Scatterplot param view end")
         return retcol

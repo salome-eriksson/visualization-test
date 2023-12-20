@@ -18,41 +18,37 @@ class ReportViewer(param.Parameterized):
     properties_file = param.String()
 
     def __init__(self, **params):
+        print("ReportViewer init")
         super().__init__(**params)
         self.reports = [
-            AbsoluteTablereport(name="Absolute Report"),
-            DiffTablereport(name="Diff Report"),
+            # ~ AbsoluteTablereport(name="Absolute Report"),
+            # ~ DiffTablereport(name="Diff Report"),
             ProblemTablereport(name="Problem Report"),
-            Scatterplot(name="Scatter Plot")
+            # ~ Scatterplot(name="Scatter Plot")
         ]
         self.param.reportType.objects = [r.name for r in self.reports]
+        self.param.reportType.default = self.reports[0].name
         self.reportType = self.reports[0].name
         self.experiment_data = ExperimentData("")
-        
-        param_view = pn.Column()
-        param_view.append(pn.Param(self.param, name="", expand_button=False))
-        data_view = pn.Column()
+
+        self.views = dict()
         for r in self.reports:
-            param_view.append(r.param_view)
-            data_view.append(r.data_view)
-        self.full_view = pn.Row(param_view,data_view)
+            self.views[r.name] = pn.Row(
+                                    pn.Column(pn.Param(self.param, name=""), r.param_view),
+                                    r.data_view)
+        print("ReportViewer init end")
     
     @param.depends('properties_file', watch=True)
     def update_property_file(self):
+        print("ReportViewer update_property_file")
         self.experiment_data = ExperimentData(self.properties_file)
         for r in self.reports:
-            r.properties_file = self.properties_file
             r.update_experiment_data(self.experiment_data)
+        print("ReportViewer update_property_file end")
         
     def view(self):
-        for i in range(len(self.reports)):
-            if self.reports[i].name == self.reportType:
-                self.full_view[0][i+1].visible = True
-                self.full_view[1][i].visible = True
-            else:
-                self.full_view[0][i+1].visible = False
-                self.full_view[1][i].visible = False
-        return self.full_view
+        print("ReportViewer view (end)")
+        return self.views[self.reportType]
         
         
 viewer = ReportViewer()

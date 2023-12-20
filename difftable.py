@@ -17,6 +17,7 @@ class DiffTablereport(Tablereport):
     def __init__(self, **params):
         print("DiffTablereport init")
         super().__init__(**params)
+        print("DiffTablereport init end")
 
     def style_table_by_row(self, row):
         retarray = ["background-color: #d1d1e0;" if row['problem'] == "" else ""] * len(row)
@@ -49,8 +50,10 @@ class DiffTablereport(Tablereport):
         return True
 
     def set_experiment_data_dependent_parameters(self):
+        print("DiffTablereport set_experiment_data_dependent_parameters")
         super().set_experiment_data_dependent_parameters()
         self.param.algorithm1.objects = self.experiment_data.algorithms
         self.param.algorithm2.objects = self.experiment_data.algorithms
         self.algorithm1 = self.experiment_data.algorithms[0]
         self.algorithm2 = self.experiment_data.algorithms[1]
+        print("DiffTablereport set_experiment_data_dependent_parameters end")

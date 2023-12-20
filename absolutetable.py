@@ -15,6 +15,8 @@ class AbsoluteTablereport(Tablereport):
     def __init__(self, **params):
         print("AbsoluteTablereport init")
         super().__init__(**params)
+        self.param_view = pn.Param(self.param,  widgets= {"algorithms": {"type": pn.widgets.CrossSelector, "definition_order" : False}})
+        print("AbsoluteTablereport init end")
 
     def style_table_by_row(self, row):
         is_aggregate = (row['problem'] == "")
@@ -52,9 +54,12 @@ class AbsoluteTablereport(Tablereport):
 
 
     def set_experiment_data_dependent_parameters(self):
+        print("AbsoluteTablereport set_experiment_data_dependent_parameters")
         super().set_experiment_data_dependent_parameters()
         self.param.algorithms.objects = self.experiment_data.algorithms
         self.algorithms = self.experiment_data.algorithms
+        print("AbsoluteTablereport set_experiment_data_dependent_parameters end")
 
     def param_view(self):
-        return pn.Param(self.param,  widgets= {"algorithms": {"type": pn.widgets.CrossSelector, "definition_order" : False}})
+        print("AbsoluteTablereport param_view (end)")
+        return self.param_view
