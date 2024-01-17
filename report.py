@@ -7,8 +7,8 @@ class Report(param.Parameterized):
   
     def __init__(self, experiment_data = ExperimentData(), **params):
         print("Report init")
-        self.update_experiment_data(experiment_data)
         super().__init__(**params)
+        self.update_experiment_data(experiment_data)
         print("Report init end")
         
         

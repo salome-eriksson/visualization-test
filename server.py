@@ -17,6 +17,7 @@ pn.extension('floatpanel')
 # TODO: cannot run multiple sessions
 # I get output on console but other than the first tab no visualization shows
 # (other than default from beginning)
+# Maybe I need instantiate?
 
 class ReportViewer(param.Parameterized):
     reportType = param.Selector()
@@ -29,7 +30,7 @@ class ReportViewer(param.Parameterized):
             AbsoluteTablereport(name="Absolute Report"),
             DiffTablereport(name="Diff Report"),
             ProblemTablereport(name="Problem Report"),
-            # ~ Scatterplot(name="Scatter Plot")
+            Scatterplot(name="Scatter Plot")
         ]
         self.param.reportType.objects = [r.name for r in self.reports]
         self.param.reportType.default = self.reports[0].name
