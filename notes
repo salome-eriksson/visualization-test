@@ -1,0 +1,66 @@
+properties link:
+https://ai.dmi.unibas.ch/_experiments/buechner/greedy-hitting-set/paper/data/greedy-hitting-set-2023-12-07-gbfs-eval/properties.tar.xz
+________________________________________________________________________________
+
+QUESTIONS:
+
+general:
+ - Which extensions would be interesting? (e.g. cactus, domainwise, taskwise)
+ - discord channel for discussion / me asking detail questions?
+ - priority of jupyter compatibility?
+
+details:
+ - loading too long?
+ - wildcards in scatter syntax?
+ - mean/gmean
+ - upload local properties needed?
+ - table sorting needed?
+ - formatting readability -> bright green hard to read (especially on gray but also in general)
+________________________________________________________________________________
+
+TODOS:
+
+before sprint:
+- gmean warnings
+- fix problemtable intialization/stretching/size in general
+- Explanations:
+  - aggregates taken over common for all (original) columns that are displayed
+  - tables custom dicts
+  - scatter entries list
+  
+maybe before sprint:
+- enable sorting in Tablereports
+- scatter allow for wildcards in entries_list (e.g *v1* *v2*)
+- see to it that packages are on right version
+- floating point formatting
+- index column width changing/too small?
+- scatter plot by order given in entries list
+
+--------------------------------------------------------------------------------
+
+features:
+- use styling/min_wins in ProblemReport
+- cactusplot
+- Domain/Taskwise?
+- upload properties file?
+- loading screen when loading properties file?
+- scatter parameters for marker type/color
+- Titles for Crosselector widgets
+
+refactor:
+- warning about reading in json
+- error messages (e.g. when properties is not a property file)
+- combine Diff and Absolute Report?
+  -> otherwise, try to avoid computing all aggregates etc two times
+- reduce load time for scatter when grouping by domain
+- set widget for table.attributes (CrossSelector) in base class instead of all children
+- scatter: why did I have shared_axes = False?
+- see if we still need to check for set experiment data in table.data_view()
+- see that we don't waste time when reports are initialized with specific values
+  -> also a problem when clicking link?
+  -> should help prepare for use in jupyter
+
+
+
+
+cross select vertikal?
