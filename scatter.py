@@ -37,10 +37,8 @@ class Scatterplot(Report):
     ysize = param.Integer(default = 500)
     replace_zero = param.Number(default = 0)
     autoscale = param.Boolean(default = True)
-    xmin = param.Number(default = 0, precedence=-1)
-    ymin = param.Number(default = 0, precedence=-1)
-    xmax = param.Number(default = 0, precedence=-1)
-    ymax = param.Number(default = 0, precedence=-1)
+    x_range = param.Range((0,0), precedence = -1)
+    y_range = param.Range((0,0), precedence = -1)
     
     
     def __init__(self, **params):
@@ -68,10 +66,8 @@ class Scatterplot(Report):
     def set_scale_restrictions(self):
         print("set scale restrictions")
         value = -1 if self.autoscale else None
-        self.param.xmin.precedence = value
-        self.param.ymin.precedence = value
-        self.param.xmax.precedence = value
-        self.param.ymax.precedence = value
+        self.param.x_range.precedence = value
+        self.param.y_range.precedence = value
 
 
     def get_algorithm_pairs(self):
@@ -138,20 +134,24 @@ class Scatterplot(Report):
             self.data_view_in_progress = False
             return pn.pane.Markdown("All points have been dropped")
 
-        # Compute min and max values if they are not specified.
-        if self.autoscale:
-            self.param.update({
-              "xmax" : overall_frame['x'].max(),
-              "xmin" : overall_frame['x'].min(),
-              "ymax" : overall_frame['y'].max(),
-              "ymin" : overall_frame['y'].min()
-            })
+        # Compute min and max values.
+        xmax = overall_frame['x'].max()
+        xmin = overall_frame['x'].min()
+        ymax = overall_frame['y'].max()
+        ymin = overall_frame['y'].min()
 
         # Compute failed values.
-        x_failed = int(10 ** math.ceil(math.log10(self.xmax))) if self.xscale == "log" else self.xmax*1.1
-        y_failed = int(10 ** math.ceil(math.log10(self.ymax))) if self.yscale == "log" else self.ymax*1.1
+        x_failed = int(10 ** math.ceil(math.log10(xmax))) if self.xscale == "log" else xmax*1.1
+        y_failed = int(10 ** math.ceil(math.log10(ymax))) if self.yscale == "log" else ymax*1.1
         overall_frame['x'].replace(np.nan,x_failed, inplace=True)
         overall_frame['y'].replace(np.nan,y_failed, inplace=True)
+        
+        # Compute ranges if they are not specified.
+        if self.autoscale:
+            self.param.update({
+              "x_range" : (xmin*0.9, x_failed*1.1),
+              "y_range" : (ymin*0.9, y_failed*1.1)
+            })
         
         # Build the plot.
         plot = overall_frame.hvplot.scatter(x='x', y='y',
@@ -161,8 +161,8 @@ class Scatterplot(Report):
                 marker=MARKERS, fill_color=COLORS, line_color=COLORS,
                 fill_alpha=self.fill_alpha, size=self.marker_size)
         plot.opts(legend_position='right')
-        plot.opts(xlim=(self.xmin*0.9, x_failed*1.1))
-        plot.opts(ylim=(self.ymin*0.9, y_failed*1.1))
+        plot.opts(xlim=(self.x_range))
+        plot.opts(ylim=(self.y_range))
 
         # Create helper lines for failed values and equality.
         helper_plots = hv.HLine(y_failed).opts(color="red", line_width=1)*hv.VLine(x_failed).opts(color="red", line_width=1)

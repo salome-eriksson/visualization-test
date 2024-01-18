@@ -11,7 +11,7 @@ from table import Tablereport
 class DiffTablereport(Tablereport):
     algorithm1 = param.Selector()
     algorithm2 = param.Selector()
-    precentual = param.Boolean(False)
+    percentual = param.Boolean(False)
     
     
     def __init__(self, **params):
@@ -40,7 +40,7 @@ class DiffTablereport(Tablereport):
         retdata = self.table_data[["Index",self.algorithm1, self.algorithm2]].copy()
         col1_numeric = pd.to_numeric(self.table_data[self.algorithm1], errors="coerce")
         col2_numeric = pd.to_numeric(self.table_data[self.algorithm2], errors="coerce")
-        if self.precentual:
+        if self.percentual:
             retdata["Diff"] = (col2_numeric / col1_numeric)-1
         else:
             retdata["Diff"] = col2_numeric - col1_numeric

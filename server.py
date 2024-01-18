@@ -41,7 +41,8 @@ class ReportViewer(param.Parameterized):
         for r in self.reports:
             self.views[r.name] = pn.Row(
                                     pn.Column(pn.Param(self.param, name=""), r.param_view),
-                                    r.data_view, sizing_mode='stretch_height')
+                                    pn.panel(r.data_view, defer_load=True), sizing_mode='stretch_both'
+                                 )
         print("ReportViewer init end")
     
     @param.depends('properties_file', watch=True)
@@ -59,4 +60,49 @@ class ReportViewer(param.Parameterized):
         
 viewer = ReportViewer()
 view = pn.Row(viewer.view)
+pn.state.location.sync(viewer,
+    {
+        "properties_file" : "properties_file",
+        "reportType" : "reportType",
+    })
+pn.state.location.sync(viewer.reports[0],
+    {
+        "attributes" : "ARattributes",
+        "custom_min_wins" : "ARcustom_min_wins",
+        "custom_aggregators" : "ARcustom_aggregators",
+        "algorithms" : "ARalgorithms"
+    })
+pn.state.location.sync(viewer.reports[1],
+    {
+        "attributes" : "DRattributes",
+        "custom_min_wins" : "DRcustom_min_wins",
+        "custom_aggregators" : "DRcustom_aggregators",
+        "algorithm1" : "DRalgorithm1",
+        "algorithm2" : "DRalgorithm2",
+        "percentual" : "DRpercentual"
+    })
+
+pn.state.location.sync(viewer.reports[2],
+    {
+        "domain" : "PRdomain",
+        "problem" : "PRproblem"
+    })
+pn.state.location.sync(viewer.reports[3],
+    {
+        'xattribute' : 'SPxattribute',
+        'yattribute' : 'SPyattribute',
+        'entries_list' : 'SPentries_list',
+        'relative': 'SPrelative',
+        'xscale': 'SPxscale',
+        'yscale': 'SPyscale',
+        'groupby': 'SPgroupby',
+        'fill_alpha': 'SPfill_alpha',
+        'marker_size' : 'SPmarker_size',
+        'xsize' : 'SPxsize',
+        'ysize' : 'SPysize',
+        'replace_zero' : 'SPreplace_zero',
+        'autoscale' : 'SPautoscale',
+        'x_range' : 'SPx_range',
+        'y_range' : 'SP_range'
+    })
 view.servable()
