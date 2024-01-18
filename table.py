@@ -13,6 +13,8 @@ from report import Report
 from experimentdata import ExperimentData
 from problemtable import ProblemTablereport
 
+# TODO: is replacing 0 with something like 0.0001 a valid approach for gmean?
+# TODO: fix warnings for gmean
 
 class Tablereport(Report):    
     DEFAULT_MIN_WINS = defaultdict(lambda:None,{
@@ -47,34 +49,33 @@ class Tablereport(Report):
     })
     
     DEFAULT_AGGREGATORS = defaultdict(lambda:"sum",{
-        # ~ "cost" : True,
+        "cost" : "sum",
         "coverage": "sum",
-        # ~ "dead_ends": False,
-        # ~ "evaulated": True,
-        # ~ "evaluations": True,
-        # ~ "evaluations_until_last_jump": True,
-        # ~ "expansions": True,
-        # ~ "expansions_until_last_jump": True,
-        # ~ "generated": True,
-        # ~ "generated_until_last_jump": True,
-        # ~ "initial_h_value": False,
-        # ~ "ipc-sat-score": False,
-        # ~ "ipc-sat-score-no-planning-domains": False,
-        # ~ "memory": True,
-        # ~ "plan_length": False,
-        # ~ "planner_memory": True,
-        # ~ "planner_time": True,
-        # ~ "planner_wall_clock_time": True,
-        # ~ "raw_memory": True,
-        # ~ "score_evaluations": False,
-        # ~ "score_expansions": False,
-        # ~ "score_generated": False,
-        # ~ "score_memory": False,
-        # ~ "score_search_time": False,
-        # ~ "score_total_time": False,
-        # ~ "search_time": True,
-        # ~ "total_time": True,
-        # ~ "translator_time_done": True
+        "evaulated": "gmean",
+        "evaluations": "gmean",
+        "evaluations_until_last_jump": "gmean",
+        "expansions": "gmean",
+        "expansions_until_last_jump": "gmean",
+        "generated": "gmean",
+        "generated_until_last_jump": "gmean",
+        # TODO: do we need finite sum?
+        "initial_h_value": "sum",
+        "ipc-sat-score": "sum",
+        "ipc-sat-score-no-planning-domains": "sum",
+        "memory": "sum",
+        "planner_memory": "sum",
+        "planner_time": "gmean",
+        "planner_wall_clock_time": "gmean",
+        "raw_memory": "sum",
+        "score_evaluations": "sum",
+        "score_expansions": "sum",
+        "score_generated": "sum",
+        "score_memory": "sum",
+        "score_search_time": "sum",
+        "score_total_time": "sum",
+        "search_time": "gmean",
+        "total_time": "gmean",
+        "translator_time_done": "gmean"
     })
 
     attributes = param.ListSelector()
@@ -234,6 +235,8 @@ class Tablereport(Report):
             aggregator = self.custom_aggregators[attribute] if attribute in self.custom_aggregators else self.DEFAULT_AGGREGATORS[attribute]
             if not columns_outdated and aggregator == self.computed[attribute]["aggregator"]:
                 continue
+
+            self.table_data.loc[(attribute, "--", "--"),"Index"] = f"{attribute} ({aggregator})"
             
             # Compute the overall aggregate.
             new_vals = None
@@ -242,9 +245,12 @@ class Tablereport(Report):
                 new_aggregates = np.NaN
             else:
                 attribute_data = self.exp_data_dropna.loc[attribute].apply(pd.to_numeric, errors='coerce')
+                # Since gmean is not a built-in function we need to set the variable to the actual function here.
+                if aggregator == "gmean":
+                    aggregator = stats.gmean
+                    attribute_data = attribute_data.replace(0,0.000001)
                 new_aggregates = attribute_data.agg(aggregator)
             self.table_data.loc[(attribute, "--", "--"),cols_without_index] = new_aggregates
-            self.table_data.loc[(attribute, "--", "--"),"Index"] = f"{attribute} ({aggregator})"
             
             
             self.computed[attribute]["domains_outdated"] = True
@@ -261,13 +267,14 @@ class Tablereport(Report):
         if attribute not in self.exp_data_dropna.index:
             self.table_data.loc[rows,cols] = np.NaN
             return
-        
-        aggregator = self.custom_aggregators[attribute] if attribute in self.custom_aggregators else self.DEFAULT_AGGREGATORS[attribute]
+
         if attribute_data is None:
             attribute_data = self.exp_data_dropna.loc[attribute].apply(pd.to_numeric, errors='coerce')
-        # TODO: fix gmean
-        # ~ if aggregator == stats.gmean:
-            # ~ attribute_data.replace(0,0.00000000000000000001)
+        aggregator = self.custom_aggregators[attribute] if attribute in self.custom_aggregators else self.DEFAULT_AGGREGATORS[attribute]
+        # Since gmean is not a built-in function we need to set the variable to the actual function here.
+        if aggregator == "gmean":
+                aggregator = stats.gmean
+                attribute_data.replace(0,0.000001, inplace=True)
 
         # Clear the slice and apply combine_first (this way, the newly aggregated data is taken wherever it exists).
         self.table_data.loc[rows,cols] = np.NaN
