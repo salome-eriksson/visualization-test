@@ -35,10 +35,12 @@ class AbsoluteTablereport(Tablereport):
         
     def style_table_by_row(self, row):
         style = super().style_table_by_row(row)
-        if row.name[0] not in self.MIN_WINS:
+        attribute = row.name[0]
+        min_wins = self.custom_min_wins[attribute] if attribute in self.custom_min_wins else self.DEFAULT_MIN_WINS[attribute]
+
+        if min_wins is None:
             return style
-            
-        min_wins = self.MIN_WINS[row.name[0]]
+
         numeric_values = pd.to_numeric(row,errors='coerce')
         min_val = numeric_values.dropna().min()
         max_val = numeric_values.dropna().max()

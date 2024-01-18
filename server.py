@@ -41,7 +41,7 @@ class ReportViewer(param.Parameterized):
         for r in self.reports:
             self.views[r.name] = pn.Row(
                                     pn.Column(pn.Param(self.param, name=""), r.param_view),
-                                    r.data_view)
+                                    r.data_view, sizing_mode='stretch_height')
         print("ReportViewer init end")
     
     @param.depends('properties_file', watch=True)

@@ -54,10 +54,12 @@ class DiffTablereport(Tablereport):
 
     def style_table_by_row(self, row):
         style = super().style_table_by_row(row)
-        if row.name[0] not in self.MIN_WINS:
+        attribute = row.name[0]
+        min_wins = self.custom_min_wins[attribute] if attribute in self.custom_min_wins else self.DEFAULT_MIN_WINS[attribute]
+        
+        if min_wins is None:
             return style
             
-        min_wins = self.MIN_WINS[row.name[0]]
         color = 'black'
         if (row["Diff"] > 0 and min_wins) or (row["Diff"] < 0 and not min_wins):
             color = 'red'

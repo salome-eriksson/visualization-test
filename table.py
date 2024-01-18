@@ -15,7 +15,7 @@ from problemtable import ProblemTablereport
 
 
 class Tablereport(Report):    
-    MIN_WINS = {
+    DEFAULT_MIN_WINS = defaultdict(lambda:None,{
         "cost" : True,
         "coverage": False,
         "dead_ends": False,
@@ -44,9 +44,9 @@ class Tablereport(Report):
         "search_time": True,
         "total_time": True,
         "translator_time_done": True
-    }
+    })
     
-    AGGREGATORS = defaultdict(lambda:"sum",{
+    DEFAULT_AGGREGATORS = defaultdict(lambda:"sum",{
         # ~ "cost" : True,
         "coverage": "sum",
         # ~ "dead_ends": False,
@@ -78,6 +78,8 @@ class Tablereport(Report):
     })
 
     attributes = param.ListSelector()
+    custom_min_wins = param.Dict(precedence=10)
+    custom_aggregators = param.Dict(precedence=10)
     
     
     def __init__(self, **params):
@@ -120,6 +122,8 @@ class Tablereport(Report):
         self.computed["__columns"] = self.experiment_data.algorithms
         self.param.attributes.objects = self.experiment_data.attributes
         param_updates["attributes"] =  self.experiment_data.attributes
+        param_updates["custom_min_wins"] = dict()
+        param_updates["custom_aggregators"] = dict()
         
         # Build the rows for the aggregated values such that we later just overwrite values rather than concatenate.
         mi = pd.MultiIndex.from_product([self.experiment_data.attributes, ["--", *self.experiment_data.domains], ["--"]],
@@ -227,7 +231,8 @@ class Tablereport(Report):
       
         cols_without_index = self.table_data.columns[1:]
         for attribute in self.experiment_data.numeric_attributes:
-            if not columns_outdated and self.AGGREGATORS[attribute] == self.computed[attribute]["aggregator"]:
+            aggregator = self.custom_aggregators[attribute] if attribute in self.custom_aggregators else self.DEFAULT_AGGREGATORS[attribute]
+            if not columns_outdated and aggregator == self.computed[attribute]["aggregator"]:
                 continue
             
             # Compute the overall aggregate.
@@ -237,8 +242,9 @@ class Tablereport(Report):
                 new_aggregates = np.NaN
             else:
                 attribute_data = self.exp_data_dropna.loc[attribute].apply(pd.to_numeric, errors='coerce')
-                new_aggregates = attribute_data.agg(self.AGGREGATORS[attribute])
+                new_aggregates = attribute_data.agg(aggregator)
             self.table_data.loc[(attribute, "--", "--"),cols_without_index] = new_aggregates
+            self.table_data.loc[(attribute, "--", "--"),"Index"] = f"{attribute} ({aggregator})"
             
             
             self.computed[attribute]["domains_outdated"] = True
@@ -256,7 +262,7 @@ class Tablereport(Report):
             self.table_data.loc[rows,cols] = np.NaN
             return
         
-        aggregator = self.AGGREGATORS[attribute]
+        aggregator = self.custom_aggregators[attribute] if attribute in self.custom_aggregators else self.DEFAULT_AGGREGATORS[attribute]
         if attribute_data is None:
             attribute_data = self.exp_data_dropna.loc[attribute].apply(pd.to_numeric, errors='coerce')
         # TODO: fix gmean

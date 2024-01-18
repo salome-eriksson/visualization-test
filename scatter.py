@@ -21,6 +21,7 @@ MARKERS = ["x","circle", "square", "triangle", "asterisk", "diamond", "cross", "
            "circle_x", "square_x", "circle_y", "square_pin", "triangle_pin"]
 COLORS = ["black", "red", "blue", "teal", "orange", "purple", "olive", "lime"]
 
+
 class Scatterplot(Report):
     xattribute = param.Selector()
     yattribute = param.Selector()
@@ -156,7 +157,7 @@ class Scatterplot(Report):
         plot = overall_frame.hvplot.scatter(x='x', y='y',
                 xlabel=xlabel, ylabel=ylabel, logx=logx, logy=logy, 
                 frame_width = self.xsize, frame_height = self.ysize, by=self.groupby,
-                hover_cols=['domain', 'problem'],
+                hover_cols=['domain', 'problem', 'name'],
                 marker=MARKERS, fill_color=COLORS, line_color=COLORS,
                 fill_alpha=self.fill_alpha, size=self.marker_size)
         plot.opts(legend_position='right')
@@ -171,11 +172,12 @@ class Scatterplot(Report):
             helper_plots = helper_plots * hv.Slope(slope=1, y_intercept=0).opts(color="black", line_width=1)
 
         overall_plot = plot * helper_plots
-        overall_plot.opts(shared_axes=False)
-        
+        # overall_plot.opts(shared_axes=False) TODO: I don't think I need this?
+
         self.data_view_in_progress = False
         print("Scatterplot data view end")
         return overall_plot
+
 
     def param_view(self):
         print("Scatterplot param view (end)")
