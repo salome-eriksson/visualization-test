@@ -18,7 +18,6 @@ TODOS:
 
 before sprint:
 - gmean warnings
-- fix problemtable intialization/stretching/size in general
 - Explanations:
   - aggregates taken over common for all (original) columns that are displayed
   - tables custom dicts
@@ -58,3 +57,4 @@ refactor:
   -> should help prepare for use in jupyter
 - Floatpanel does not close when removed programmatically
 - Floatpanel wrong height (see eg https://discourse.holoviz.org/t/tabulator-in-floatpanel-height-size-is-not-correct-mre-when-the-floatpanel-is-dynamically-added/6497)
+  -> cannot use sizing_mode = "stretch_both" (table disappears completely)

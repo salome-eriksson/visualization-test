@@ -11,9 +11,10 @@ class ProblemTablereport(Report):
     domain = param.Selector()
     problem = param.Selector()
 
-    def __init__(self, domain=None, problem=None, **params):
+    def __init__(self, domain=None, problem=None, sizing_mode="stretch_both", **params):
         print("ProblemTablereport init")
         super().__init__(**params)
+        self.sizing_mode = sizing_mode
         if domain and problem:
             self.domain = domain
             self.problem = problem
@@ -48,7 +49,7 @@ class ProblemTablereport(Report):
         view_data = self.experiment_data.data.xs((self.domain, self.problem), level=(1,2))
         self.view = pn.widgets.Tabulator(
                 value=view_data, disabled = True, pagination="remote", page_size=10000, widths=250, 
-                formatters=tabulator_formatters, frozen_columns=['attribute'])
+                formatters=tabulator_formatters, frozen_columns=['attribute'], sizing_mode=self.sizing_mode)
         print("ProblemTablereport data_view end")
         return self.view
             
