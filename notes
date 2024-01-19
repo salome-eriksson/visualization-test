@@ -1,7 +1,3 @@
-properties link:
-https://ai.dmi.unibas.ch/_experiments/buechner/greedy-hitting-set/paper/data/greedy-hitting-set-2023-12-07-gbfs-eval/properties.tar.xz
-________________________________________________________________________________
-
 QUESTIONS:
 
 general:
@@ -29,11 +25,12 @@ before sprint:
   - scatter entries list
   
 maybe before sprint:
+- cross select vertical?
+- floating point formatting
+- index column width changing/too small?
 - enable sorting in Tablereports
 - scatter allow for wildcards in entries_list (e.g *v1* *v2*)
 - see to it that packages are on right version
-- floating point formatting
-- index column width changing/too small?
 - scatter plot by order given in entries list
 
 --------------------------------------------------------------------------------
@@ -59,8 +56,5 @@ refactor:
 - see that we don't waste time when reports are initialized with specific values
   -> also a problem when clicking link?
   -> should help prepare for use in jupyter
-
-
-
-
-cross select vertikal?
+- Floatpanel does not close when removed programmatically
+- Floatpanel wrong height (see eg https://discourse.holoviz.org/t/tabulator-in-floatpanel-height-size-is-not-correct-mre-when-the-floatpanel-is-dynamically-added/6497)

@@ -14,10 +14,6 @@ from problemtable import ProblemTablereport
 pn.extension('tabulator')
 pn.extension('floatpanel')
 
-# TODO: cannot run multiple sessions
-# I get output on console but other than the first tab no visualization shows
-# (other than default from beginning)
-# Maybe I need instantiate?
 
 class ReportViewer(param.Parameterized):
     reportType = param.Selector()
@@ -26,20 +22,20 @@ class ReportViewer(param.Parameterized):
     def __init__(self, **params):
         print("ReportViewer init")
         super().__init__(**params)
-        self.reports = [
-            AbsoluteTablereport(name="Absolute Report"),
-            DiffTablereport(name="Diff Report"),
-            ProblemTablereport(name="Problem Report"),
-            Scatterplot(name="Scatter Plot")
-        ]
-        self.param.reportType.objects = [r.name for r in self.reports]
-        self.param.reportType.default = self.reports[0].name
-        self.reportType = self.reports[0].name
+        self.reports = {
+            "Absolute Report" : AbsoluteTablereport(name="Absolute Report"),
+            "Diff Report" : DiffTablereport(name="Diff Report"),
+            "Problem Report" : ProblemTablereport(name="Problem Report"),
+            "Scatter Plot" : Scatterplot(name="Scatter Plot")
+        }
+        self.param.reportType.objects = [name for name in self.reports.keys()]
+        self.reportType = self.param.reportType.objects[0]
+        self.previous_reportType = self.reportType
         self.experiment_data = ExperimentData("")
 
         self.views = dict()
-        for r in self.reports:
-            self.views[r.name] = pn.Row(
+        for key, r in self.reports.items():
+            self.views[key] = pn.Row(
                                     pn.Column(pn.Param(self.param, name=""), r.param_view),
                                     pn.panel(r.data_view, defer_load=True), sizing_mode='stretch_both'
                                  )
@@ -49,12 +45,14 @@ class ReportViewer(param.Parameterized):
     def update_property_file(self):
         print("ReportViewer update_property_file")
         self.experiment_data = ExperimentData(self.properties_file)
-        for r in self.reports:
+        for r in self.reports.values():
             r.update_experiment_data(self.experiment_data)
         print("ReportViewer update_property_file end")
         
     def view(self):
         print("ReportViewer view (end)")
+        self.reports[self.previous_reportType].deactivate()
+        self.previous_reportType = self.reportType
         return self.views[self.reportType]
         
         
@@ -65,14 +63,14 @@ pn.state.location.sync(viewer,
         "properties_file" : "properties_file",
         "reportType" : "reportType",
     })
-pn.state.location.sync(viewer.reports[0],
+pn.state.location.sync(viewer.reports["Absolute Report"],
     {
         "attributes" : "ARattributes",
         "custom_min_wins" : "ARcustom_min_wins",
         "custom_aggregators" : "ARcustom_aggregators",
         "algorithms" : "ARalgorithms"
     })
-pn.state.location.sync(viewer.reports[1],
+pn.state.location.sync(viewer.reports["Diff Report"],
     {
         "attributes" : "DRattributes",
         "custom_min_wins" : "DRcustom_min_wins",
@@ -82,12 +80,12 @@ pn.state.location.sync(viewer.reports[1],
         "percentual" : "DRpercentual"
     })
 
-pn.state.location.sync(viewer.reports[2],
+pn.state.location.sync(viewer.reports["Problem Report"],
     {
         "domain" : "PRdomain",
         "problem" : "PRproblem"
     })
-pn.state.location.sync(viewer.reports[3],
+pn.state.location.sync(viewer.reports["Scatter Plot"],
     {
         'xattribute' : 'SPxattribute',
         'yattribute' : 'SPyattribute',

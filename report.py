@@ -31,3 +31,6 @@ class Report(param.Parameterized):
     def data_view(self):
         print("Report data view (return)")
         return pn.pane.Markdown("### Report")
+
+    def deactivate(self):
+        pass

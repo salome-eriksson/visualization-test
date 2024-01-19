@@ -107,6 +107,7 @@ class Tablereport(Report):
         self.view.add_filter(pn.bind(self.filter, dummy=self.dummy))
         self.view.style.apply(func=self.style_table_by_row, axis=1)
         self.view.on_click(self.on_click_callback)
+        self.full_view = pn.Column(self.view, self.placeholder)
         print("TableReport init end")
 
 
@@ -186,8 +187,10 @@ class Tablereport(Report):
         # clicked on concrete problem -> open problem wise report
         if problem != "--":
             probreport = ProblemTablereport(experiment_data = self.experiment_data, domain = domain, problem = problem)
-            floatpanel = pn.layout.FloatPanel(probreport.data_view, name=f"{domain} - {problem}", contained=False, position='left-top', height=500)
-            self.placeholder[:] = [floatpanel]
+            floatpanel = pn.layout.FloatPanel(
+                probreport.data_view, name=f"{domain} - {problem}", contained=False, 
+                height=500, width=500, config = {"setStatus" : "maximized", "closeOnEscape" : True})
+            self.placeholder.append(floatpanel)
             print("on click problemreport end")
             return
 
@@ -285,17 +288,20 @@ class Tablereport(Report):
 
     def data_view(self):
         print("TableReport data_view")
-        # TODO: figure out why we need this (most likely the same reason why we need to initialize table_data with Index column)
-        if not self.experiment_data:
-            return pn.pane.Markdown()
-
+        
         self.aggregate_where_necessary()
         self.view_data = self.compute_view_data()
         self.view.value = self.view_data
         print("TableReport data_view end")        
-        return pn.Column(self.view, self.placeholder)
+        return self.full_view
 
 
     def param_view(self):
         print("TableReport param_view (end)")
         return self.param_view
+
+
+    def deactivate(self):
+        print("TableReport on defocus")
+        self.placeholder.clear()
+        print("TableReport on defocus end")

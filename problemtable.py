@@ -14,10 +14,8 @@ class ProblemTablereport(Report):
     def __init__(self, domain=None, problem=None, **params):
         print("ProblemTablereport init")
         super().__init__(**params)
-        # TODO: fix hack!
-        if domain:
+        if domain and problem:
             self.domain = domain
-        if problem:
             self.problem = problem
         print("ProblemTablereport init end")
 
@@ -49,7 +47,7 @@ class ProblemTablereport(Report):
             tabulator_formatters[alg] = {'type': 'textarea'}
         view_data = self.experiment_data.data.xs((self.domain, self.problem), level=(1,2))
         self.view = pn.widgets.Tabulator(
-                value=view_data, disabled = True, pagination=None, widths=250, 
+                value=view_data, disabled = True, pagination="remote", page_size=10000, widths=250, 
                 formatters=tabulator_formatters, frozen_columns=['attribute'])
         print("ProblemTablereport data_view end")
         return self.view
