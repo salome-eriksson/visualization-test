@@ -232,7 +232,10 @@ class Tablereport(Report):
         
         # If the columns used for aggreagtion are outdated, recompute dropna to only consider current columns.
         if columns_outdated:
-            self.exp_data_dropna = self.experiment_data.data[current_columns].dropna()
+            unique_columns = list(dict.fromkeys(current_columns))
+            if not unique_columns:
+                return
+            self.exp_data_dropna = self.experiment_data.data[unique_columns].dropna()
             self.computed["__columns"] = current_columns
       
         cols_without_index = self.table_data.columns[1:]

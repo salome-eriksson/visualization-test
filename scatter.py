@@ -28,24 +28,61 @@ class Scatterplot(Report):
     entries_list = param.String()
     available_algorithms = param.String()
     relative = param.Boolean(default = False)
+    groupby = param.Selector(default = "name", objects = ["name","domain"])
     xscale = param.Selector(default = "log", objects = ["log","linear"])
     yscale = param.Selector(default = "log", objects = ["log","linear"])
-    groupby = param.Selector(default = "name", objects = ["name","domain"])
-    fill_alpha = param.Number(default = 0.0, bounds=(0.0,1.0))
-    marker_size = param.Integer(default = 75, bounds = (5,250))
-    xsize = param.Integer(default = 500)
-    ysize = param.Integer(default = 500)
-    replace_zero = param.Number(default = 0)
     autoscale = param.Boolean(default = True)
     x_range = param.Range((0,0), precedence = -1)
     y_range = param.Range((0,0), precedence = -1)
+    replace_zero = param.Number(default = 0)
+    xsize = param.Integer(default = 500)
+    ysize = param.Integer(default = 500)
+    marker_size = param.Integer(default = 75, bounds = (5,250))
+    marker_fill_alpha = param.Number(default = 0.0, bounds=(0.0,1.0))
     
     
     def __init__(self, **params):
         print("Scatterplot init")
         super().__init__(**params)
-        self.param_view =  pn.Param(self.param, widgets = {'entries_list' : pn.widgets.TextAreaInput(name="Entries List", auto_grow = True),
-                                                           'available_algorithms' : pn.widgets.TextAreaInput(name="Available Algorithms", disabled=True, auto_grow = True)})
+        self.param_view = pn.Column(
+            pn.Param(self.param.xattribute),
+            pn.Param(self.param.yattribute),
+            pn.widgets.TextAreaInput.from_param(self.param.entries_list, auto_grow = True),
+            pn.pane.Markdown(""),
+            pn.Param(self.param.relative),
+            pn.Param(self.param.groupby),
+            pn.Param(self.param.xscale),
+            pn.Param(self.param.yscale),
+            pn.Param(self.param.autoscale),
+            pn.Param(self.param.x_range),
+            pn.Param(self.param.y_range),
+            pn.Param(self.param.replace_zero),
+            pn.Param(self.param.xsize),
+            pn.Param(self.param.ysize),
+            pn.Param(self.param.marker_size),
+            pn.Param(self.param.marker_fill_alpha),
+            pn.pane.Markdown("""
+                ### Information
+                In entries list you can specify several combinations of algorithms 
+                that you want to compare against each other, one combination per row:
+                
+                - "alg1" will use alg1 on both the x and y axis, 
+                  and has legend entry "alg1"
+                - "alg1 alg2" will use alg1 on the x and alg2 on the y axis, 
+                  and has legend entry "alg1 vs alg2"
+                - "alg1 alg2 x" will use alg1 on the x and alg2 on the y axis, 
+                  and has legend entry "x"
+                
+                If "Autoscale" is deactivated, you can specify the x and y ranges 
+                of the plot yourself; otherwise it will be computed based on
+                min/max values of the data points.
+                
+                For relative or log plots you can use "Replace zero" to replace 
+                all 0 values with the chosen number. Otherwise data points with 
+                a 0 will be dropped.
+            """)
+            
+        )
         self.data_view_in_progress = False
         print("Scatterplot init end")
 
@@ -159,7 +196,7 @@ class Scatterplot(Report):
                 frame_width = self.xsize, frame_height = self.ysize, by=self.groupby,
                 hover_cols=['domain', 'problem', 'name'],
                 marker=MARKERS, fill_color=COLORS, line_color=COLORS,
-                fill_alpha=self.fill_alpha, size=self.marker_size)
+                fill_alpha=self.marker_fill_alpha, size=self.marker_size)
         plot.opts(legend_position='right')
         plot.opts(xlim=(self.x_range))
         plot.opts(ylim=(self.y_range))
@@ -178,7 +215,8 @@ class Scatterplot(Report):
         print("Scatterplot data view end")
         return overall_plot
 
-
+    @param.depends('available_algorithms', watch=True)
     def param_view(self):
         print("Scatterplot param view (end)")
+        self.param_view[3] = pn.pane.Markdown(f"**Available Algorithms:**\n {self.available_algorithms}")
         return self.param_view

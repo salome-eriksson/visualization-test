@@ -17,11 +17,6 @@ ________________________________________________________________________________
 TODOS:
 
 before sprint:
-- gmean warnings
-- Explanations:
-  - aggregates taken over common for all (original) columns that are displayed
-  - tables custom dicts
-  - scatter entries list
   
 maybe before sprint:
 - cross select vertical?
