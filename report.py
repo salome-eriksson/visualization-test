@@ -34,3 +34,11 @@ class Report(param.Parameterized):
 
     def deactivate(self):
         pass
+        
+    def get_param_config(self):
+        pass
+        
+    # Returns a dictionary of parameters and values they should be set to 
+    # This dictionary is batch updated by the caller of this method
+    def get_params_from_string(self, config_string):
+        return dict()

@@ -310,3 +310,61 @@ class Tablereport(Report):
         print("TableReport on defocus")
         self.placeholder.clear()
         print("TableReport on defocus end")
+
+
+    def get_param_config(self):
+        all_attributes = self.param.attributes.objects
+        attributes_string = "default"
+        if self.attributes != all_attributes:
+            attribute_indices = [str(all_attributes.index(attr)) for attr in self.attributes]
+            attributes_string = ",".join(attribute_indices)
+        
+        min_wins_string_parts = []
+        for key, value in self.custom_min_wins.items():
+            key_string = key
+            if key in all_attributes:
+                key_string = str(all_attributes.index(key))
+            value_string = "1" if value else "0"
+            min_wins_string_parts.append(f"{key_string}:{value_string}")
+        min_wins_string = ",".join(min_wins_string_parts)
+        
+        aggregators_string_parts = []
+        aggregators_vals = {"sum" : "s", "mean" : "m", "gmean" : "g"}
+        for key, value in self.custom_aggregators.items():
+            key_string = key
+            if key in all_attributes:
+                key_string = str(all_attributes.index(key))
+            value_string = aggregators_vals[value] if value in aggregators_vals.keys() else value
+            aggregators_string_parts.append(f"{key_string}:{value_string}")
+        aggregators_string = ",".join(aggregators_string_parts)
+        
+        return f"{attributes_string};{min_wins_string};{aggregators_string}"
+
+
+    def get_params_from_string(self, config_string):
+        ret = dict()
+        all_attributes = self.experiment_data.attributes
+        if len(config_string) != 3:
+            return ret
+
+        if config_string[0] != "default":
+            attributes_parts = config_string[0].split(",")
+            ret["attributes"] = [all_attributes[int(x)] for x in attributes_parts]
+            
+        if config_string[1] != "":
+            min_wins = dict()
+            for part in config_string[1].split(","):
+                p = part.split(":")
+                min_wins[all_attributes[int(p[0])]] = bool(int(p[1]))
+            ret["custom_min_wins"] = min_wins
+
+        if config_string[2] != "":
+            aggregators_vals = {"s" : "sum", "m" : "mean", "g" : "gmean"}
+            aggs = dict()
+            for part in config_string[2].split(","):
+                p = part.split(":")
+                val = aggregators_vals.get(p[1], p[1])
+                aggs[all_attributes[int(p[0])]] = val
+            ret["custom_aggregators"] = aggs
+                
+        return ret

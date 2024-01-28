@@ -83,3 +83,26 @@ class AbsoluteTablereport(Tablereport):
     def param_view(self):
         print("AbsoluteTablereport param_view (end)")
         return self.param_view
+
+
+    def get_param_config(self):
+        param_config = super().get_param_config()
+        all_algorithms = self.param.algorithms.objects
+        algorithms_string = "default"
+        if self.algorithms != all_algorithms:
+            algorithm_indices = [str(all_algorithms.index(attr)) for attr in self.algorithms]
+            algorithms_string = ",".join(algorithm_indices)
+        param_config += f";{algorithms_string}"
+        return param_config
+
+
+    def get_params_from_string(self, config_string):
+        print(f"AbsoluteTablereport get_params_from_string {config_string}") 
+        if len(config_string) != 4:
+            return dict()
+        ret = super().get_params_from_string(config_string[0:3])
+        all_algorithms = self.param.algorithms.objects
+        if config_string[3] != "default":
+            algorithms_parts = config_string[3].split(",")
+            ret["algorithms"] = [all_algorithms[int(x)] for x in algorithms_parts]
+        return ret

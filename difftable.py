@@ -104,5 +104,26 @@ class DiffTablereport(Tablereport):
     def param_view(self):
         print("DiffTablereport param_view (end)")
         return self.param_view
-        
 
+
+    def get_param_config(self):
+        param_config = super().get_param_config()
+        alg1_string = "" if self.algorithm1 == "--" else str(self.experiment_data.algorithms.index(self.algorithm1))
+        alg2_string = "" if self.algorithm2 == "--" else str(self.experiment_data.algorithms.index(self.algorithm2))
+        percentual_string = "1" if self.percentual else "0"
+        param_config += f";{alg1_string};{alg2_string};{percentual_string}"
+        return param_config
+
+
+    def get_params_from_string(self, config_string):
+        print(f"DiffTablereport get_params_from_string {config_string}") 
+        if len(config_string) != 6:
+            return dict()
+        ret = super().get_params_from_string(config_string[0:3])
+        all_algorithms = self.experiment_data.algorithms
+        if config_string[3] != "":
+            ret["algorithm1"] = all_algorithms[int(config_string[3])]
+        if config_string[4] != "":
+            ret["algorithm2"] = all_algorithms[int(config_string[4])]
+        ret["percentual"] = bool(int(config_string[5]))
+        return ret

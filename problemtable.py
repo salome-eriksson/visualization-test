@@ -56,3 +56,21 @@ class ProblemTablereport(Report):
     def param_view(self):
         print("ProblemTablereport param_view (end)")
         return pn.Param(self.param)
+        
+    def get_param_config(self):
+        domain = self.domain if self.domain != "--" else ""
+        problem = self.problem if self.problem != "--" else ""
+        return f"{domain};{problem}"
+
+
+    # We set domain here directly since domain needs to be set *before* problem
+    def get_params_from_string(self, config_string):
+        print(f"ProblemTablereport get_params_from_string {config_string}") 
+        ret = dict()
+        if len(config_string) != 2:
+            return ret
+        if config_string[0] != "":
+            self.domain = config_string[0]
+        if config_string[1] != "":
+            ret["problem"] = config_string[1]
+        return ret

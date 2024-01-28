@@ -215,8 +215,45 @@ class Scatterplot(Report):
         print("Scatterplot data view end")
         return overall_plot
 
+    # TODO: figure out if we can do without the watcher, it causes unnecessary output
     @param.depends('available_algorithms', watch=True)
     def param_view(self):
         print("Scatterplot param view (end)")
         self.param_view[3] = pn.pane.Markdown(f"**Available Algorithms:**\n {self.available_algorithms}")
         return self.param_view
+
+
+    def get_param_config(self):
+        parts = []
+        parts.append("" if self.xattribute == "--" else str(self.experiment_data.attributes.index(self.xattribute)))
+        parts.append("" if self.yattribute == "--" else str(self.experiment_data.attributes.index(self.yattribute)))
+        entries_separated = [x.split() for x in self.entries_list.split("\n")]
+        entries_parts = []
+        for entry in entries_separated:
+            tmp = []
+            for elem in entry:
+                if elem in self.experiment_data.algorithms:
+                    tmp.append(str(self.experiment_data.algorithms.index(elem)))
+                else:
+                    tmp.append(elem)
+            entries_parts.append(":".join(tmp))
+        parts.append(",".join(entries_parts))
+        parts.append("1" if self.relative else "0")
+        parts.append(str(self.param.groupby.objects.index(self.groupby)))
+        parts.append(str(self.param.xscale.objects.index(self.xscale)))
+        parts.append(str(self.param.yscale.objects.index(self.yscale)))
+        if self.autoscale:
+            parts.extend(["1", "", ""])
+        else:
+            parts.extend(["1", f"{str(self.x_range[0])},{str(self.x_range[1])}",
+                         f"{str(self.y_range[0])},{str(self.y_range[1])}"])
+        parts.append(str(self.replace_zero))
+        parts.append("" if self.xsize == 500 else str(self.xsize))
+        parts.append("" if self.ysize == 500 else str(self.ysize))
+        parts.append("" if self.marker_size == 75 else str(self.marker_size))
+        parts.append("" if self.marker_fill_alpha == 0.0 else str(self.marker_fill_alpha))
+        return ";".join(parts)
+
+
+    def get_params_from_string(self, config_string):
+        return
