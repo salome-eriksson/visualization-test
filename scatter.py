@@ -227,6 +227,7 @@ class Scatterplot(Report):
         parts = []
         parts.append("" if self.xattribute == "--" else str(self.experiment_data.attributes.index(self.xattribute)))
         parts.append("" if self.yattribute == "--" else str(self.experiment_data.attributes.index(self.yattribute)))
+        
         entries_separated = [x.split() for x in self.entries_list.split("\n")]
         entries_parts = []
         for entry in entries_separated:
@@ -238,15 +239,18 @@ class Scatterplot(Report):
                     tmp.append(elem)
             entries_parts.append(":".join(tmp))
         parts.append(",".join(entries_parts))
+        
         parts.append("1" if self.relative else "0")
         parts.append(str(self.param.groupby.objects.index(self.groupby)))
         parts.append(str(self.param.xscale.objects.index(self.xscale)))
         parts.append(str(self.param.yscale.objects.index(self.yscale)))
+        
         if self.autoscale:
             parts.extend(["1", "", ""])
         else:
-            parts.extend(["1", f"{str(self.x_range[0])},{str(self.x_range[1])}",
+            parts.extend(["0", f"{str(self.x_range[0])},{str(self.x_range[1])}",
                          f"{str(self.y_range[0])},{str(self.y_range[1])}"])
+
         parts.append(str(self.replace_zero))
         parts.append("" if self.xsize == 500 else str(self.xsize))
         parts.append("" if self.ysize == 500 else str(self.ysize))
@@ -254,6 +258,50 @@ class Scatterplot(Report):
         parts.append("" if self.marker_fill_alpha == 0.0 else str(self.marker_fill_alpha))
         return ";".join(parts)
 
-
+    #TODO: replace 'if x == ""' with 'if x' in other classes
     def get_params_from_string(self, config_string):
-        return
+        ret = dict()
+        if len(config_string) != 15:
+            return ret
+
+        if config_string[0]:
+            ret["xattribute"] = self.experiment_data.attributes[int(config_string[0])]
+        if config_string[1]:
+            ret["yattribute"] = self.experiment_data.attributes[int(config_string[1])]
+
+        entry_strings = []
+        for entry in config_string[2].split(","):
+            tmp = []
+            for elem in entry.split(":"):
+                if elem.isdigit():
+                    tmp.append(self.experiment_data.algorithms[int(elem)])
+                else:
+                    tmp.append(elem)
+            entry_strings.append(" ".join(tmp))
+        if entry_strings:
+            ret["entries_list"] = "\n".join(entry_strings)
+
+        ret["relative"] = False if config_string[3] == "0" else True
+        ret["groupby"] = "name" if config_string[4] == "0" else "domain"
+        ret["xscale"] = "log" if config_string[5] == "0" else "linear"
+        ret["yscale"] = "log" if config_string[6] == "0" else "linear"
+
+        ret["autoscale"] = False if config_string[7] == "0" else True
+        if not ret["autoscale"]:
+            x_parts = config_string[8].split(",")
+            ret["x_range"] = (float(x_parts[0]), float(x_parts[1]))
+            y_parts = config_string[9].split(",")
+            ret["y_range"] = (float(y_parts[0]), float(y_parts[1]))
+
+        ret["replace_zero"] = float(config_string[10])
+        if config_string[11]:
+            ret["xsize"] = int(config_string[11])
+        if config_string[12]:
+            ret["ysize"] = int(config_string[12])
+        if config_string[13]:
+            ret["marker_size"] = int(config_string[13])
+        if config_string[14]:
+            ret["marker_fill_alpha"] = float(config_string[14])
+        print(ret)
+        
+        return ret
