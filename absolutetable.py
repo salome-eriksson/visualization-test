@@ -45,20 +45,25 @@ class AbsoluteTablereport(Tablereport):
         )
         print("AbsoluteTablereport init end")
 
+
     def set_experiment_data_dependent_parameters(self):
         print("AbsoluteTablereport set_experiment_data_dependent_parameters")
         param_updates = super().set_experiment_data_dependent_parameters()
         self.param.algorithms.objects = self.experiment_data.algorithms
+        self.param.algorithms.default = self.experiment_data.algorithms
         param_updates["algorithms"] = self.experiment_data.algorithms
         print("AbsoluteTablereport set_experiment_data_dependent_parameters end")
         return param_updates
 
+
     def compute_view_data(self):
         return self.table_data[["Index"] + self.algorithms]
-        
+
+
     def get_current_columns(self):
         return self.algorithms
-        
+
+
     def style_table_by_row(self, row):
         style = super().style_table_by_row(row)
         attribute = row.name[0]
@@ -80,29 +85,23 @@ class AbsoluteTablereport(Tablereport):
                 style[i] = style[i]+ "color: #00{:02x}{:02x};".format(y,200-y)
         return style
 
+
     def param_view(self):
         print("AbsoluteTablereport param_view (end)")
         return self.param_view
 
 
-    def get_param_config(self):
-        param_config = super().get_param_config()
-        all_algorithms = self.param.algorithms.objects
-        algorithms_string = "default"
-        if self.algorithms != all_algorithms:
-            algorithm_indices = [str(all_algorithms.index(attr)) for attr in self.algorithms]
-            algorithms_string = ",".join(algorithm_indices)
-        param_config += f";{algorithms_string}"
-        return param_config
+    def get_params_as_dict(self):      
+        params = super().get_params_as_dict()
+        
+        # shorten the algorithms parameter by using indices instead of the attribute names
+        if "algorithms" in params:
+            params["algorithms"] = [self.param.algorithms.objects.index(a) for a in params["algorithms"]]
+        return params
 
 
-    def get_params_from_string(self, config_string):
-        print(f"AbsoluteTablereport get_params_from_string {config_string}") 
-        if len(config_string) != 4:
-            return dict()
-        ret = super().get_params_from_string(config_string[0:3])
-        all_algorithms = self.param.algorithms.objects
-        if config_string[3] != "default":
-            algorithms_parts = config_string[3].split(",")
-            ret["algorithms"] = [all_algorithms[int(x)] for x in algorithms_parts]
-        return ret
+    def set_params_from_dict(self, params):
+        super().set_params_from_dict(params)
+        if "algorithms" in params:
+            params["algorithms"] = [self.param.algorithms.objects[x] for x in params["algorithms"]]
+        self.param.update(params) #TODO: currently we need to make sure that the child calls this, maybe redesign...

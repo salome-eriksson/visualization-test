@@ -1,8 +1,10 @@
 #! /usr/bin/env python3
 
+import base64 # for encoding the compressed json parameter dict as url
+import json # for dumping the parameter dict as json
 import param
 import panel as pn
-import copy
+import zlib # for compressing the json parameter dict
 
 from experimentdata import ExperimentData
 from report import Report
@@ -18,13 +20,16 @@ pn.extension('floatpanel')
 
 class ReportViewer(param.Parameterized):
     reportType = param.Selector()
-    properties_file = param.String()
-    version = param.String("1.0")
+    properties_file = param.String(default="")
     param_config = param.String()
 
     def __init__(self, **params):
         print("ReportViewer init")
         super().__init__(**params)
+
+        self.setting_param_config = False
+        self.setting_params = False
+        
         self.reports = {
             "Absolute Report" : AbsoluteTablereport(name="Absolute Report"),
             "Diff Report" : DiffTablereport(name="Diff Report"),
@@ -42,8 +47,8 @@ class ReportViewer(param.Parameterized):
                                     pn.Column(pn.Param(self.param, name=""), r.param_view),
                                     pn.panel(r.data_view, defer_load=True), sizing_mode='stretch_both'
                                  )
-        
-        self.update_param_config()
+        if self.param_config:
+            set_from_param_config()
         
         #register callback for creating config string for url
         self.param.watch(self.update_param_config, ["properties_file", "reportType"])
@@ -64,7 +69,8 @@ class ReportViewer(param.Parameterized):
              "replace_zero", "xsize", "ysize", "marker_size", "marker_fill_alpha"])
         
         print("ReportViewer init end")
-    
+
+
     @param.depends('properties_file', watch=True)
     def update_property_file(self):
         print("ReportViewer update_property_file")
@@ -72,37 +78,52 @@ class ReportViewer(param.Parameterized):
         for r in self.reports.values():
             r.update_experiment_data(self.experiment_data)
         print("ReportViewer update_property_file end")
-    
-        
+
+
     def view(self):
         print("ReportViewer view (end)")
         self.reports[self.previous_reportType].deactivate()
         self.previous_reportType = self.reportType
         return self.views[self.reportType]
-        
+
 
     def update_param_config(self, *events):
-        report = self.reports[self.reportType]
-        report_no = sorted(self.reports.keys()).index(self.reportType)
-        self.param_config = f"{self.properties_file};{report_no};{report.get_param_config()}"
-        
+        if self.setting_params:
+            return
+        self.setting_param_config = True
+        params = self.reports[self.reportType].get_params_as_dict()
+        if self.properties_file != self.param.properties_file.default:
+            params["properties_file"] = self.properties_file
+        params["reportType"] = sorted(self.reports.keys()).index(self.reportType)
+        params["version"] = "1.0"
+        self.param_config = base64.urlsafe_b64encode(zlib.compress(json.dumps(params).encode())).decode()
+        print("Updating param config")
+        print(params)
+        print(self.param_config)
+        self.setting_param_config = False
+
+
     @param.depends("param_config", watch=True)
     def set_from_param_config(self):
-        print(f"set from param {self.param_config}")
-        parts = self.param_config.split(";")
-        # We only want to execute this once when loading a new session (TODO: find better way)
-        if self.properties_file == parts[0]:
+        print("set_from_param_config")
+        if self.setting_param_config:
             return
-        # First update properties so the reports have the proper algorithms/attributes etc set up
+        self.setting_params = True
+        params = json.loads(zlib.decompress(base64.urlsafe_b64decode(self.param_config.encode())))
         self.param.update({
-            "properties_file" : parts[0],
-            "reportType": sorted(self.reports.keys())[int(parts[1])]
+            "properties_file": params.pop("properties_file"),
+            "reportType": sorted(self.reports.keys())[int(params.pop("reportType"))],
         })
-        self.reports[self.reportType].param.update(
-           self.reports[self.reportType].get_params_from_string(parts[2:])
-        )
-        
+        assert(params.pop("version") == "1.0")
+        self.reports[self.reportType].set_params_from_dict(params)
+        print("Setting param config")
+        print(params)
+        print(self.param_config)
+        self.setting_params = False
+
+
+
 viewer = ReportViewer()
 view = pn.Row(viewer.view)
-pn.state.location.sync(viewer, { "version" : "version", "param_config" : "config" })
+pn.state.location.sync(viewer, { "param_config" : "c" })
 view.servable()

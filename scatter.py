@@ -23,17 +23,17 @@ COLORS = ["black", "red", "blue", "teal", "orange", "purple", "olive", "lime"]
 
 
 class Scatterplot(Report):
-    xattribute = param.Selector()
-    yattribute = param.Selector()
-    entries_list = param.String()
+    xattribute = param.Selector(default="--")
+    yattribute = param.Selector(default="--")
+    entries_list = param.String(default="")
     available_algorithms = param.String()
     relative = param.Boolean(default = False)
     groupby = param.Selector(default = "name", objects = ["name","domain"])
     xscale = param.Selector(default = "log", objects = ["log","linear"])
     yscale = param.Selector(default = "log", objects = ["log","linear"])
     autoscale = param.Boolean(default = True)
-    x_range = param.Range((0,0), precedence = -1)
-    y_range = param.Range((0,0), precedence = -1)
+    x_range = param.Range(default=(0,0), precedence = -1)
+    y_range = param.Range(default=(0,0), precedence = -1)
     replace_zero = param.Number(default = 0)
     xsize = param.Integer(default = 500)
     ysize = param.Integer(default = 500)
@@ -223,85 +223,24 @@ class Scatterplot(Report):
         return self.param_view
 
 
-    def get_param_config(self):
-        parts = []
-        parts.append("" if self.xattribute == "--" else str(self.experiment_data.attributes.index(self.xattribute)))
-        parts.append("" if self.yattribute == "--" else str(self.experiment_data.attributes.index(self.yattribute)))
-        
-        entries_separated = [x.split() for x in self.entries_list.split("\n")]
-        entries_parts = []
-        for entry in entries_separated:
-            tmp = []
-            for elem in entry:
-                if elem in self.experiment_data.algorithms:
-                    tmp.append(str(self.experiment_data.algorithms.index(elem)))
-                else:
-                    tmp.append(elem)
-            entries_parts.append(":".join(tmp))
-        parts.append(",".join(entries_parts))
-        
-        parts.append("1" if self.relative else "0")
-        parts.append(str(self.param.groupby.objects.index(self.groupby)))
-        parts.append(str(self.param.xscale.objects.index(self.xscale)))
-        parts.append(str(self.param.yscale.objects.index(self.yscale)))
-        
-        if self.autoscale:
-            parts.extend(["1", "", ""])
-        else:
-            parts.extend(["0", f"{str(self.x_range[0])},{str(self.x_range[1])}",
-                         f"{str(self.y_range[0])},{str(self.y_range[1])}"])
+    def get_params_as_dict(self):
+        d = super().get_params_as_dict()
+        if "autoscale" not in d: # if it's not in the dict it is on its default value (True)
+            if "x_range" in d:
+                d.pop("x_range")
+            if "y_range" in d:
+                d.pop("y_range")
+        if "available_algorithms" in d:
+            d.pop("available_algorithms")
+        return d
 
-        parts.append(str(self.replace_zero))
-        parts.append("" if self.xsize == 500 else str(self.xsize))
-        parts.append("" if self.ysize == 500 else str(self.ysize))
-        parts.append("" if self.marker_size == 75 else str(self.marker_size))
-        parts.append("" if self.marker_fill_alpha == 0.0 else str(self.marker_fill_alpha))
-        return ";".join(parts)
 
-    #TODO: replace 'if x == ""' with 'if x' in other classes
-    def get_params_from_string(self, config_string):
-        ret = dict()
-        if len(config_string) != 15:
-            return ret
-
-        if config_string[0]:
-            ret["xattribute"] = self.experiment_data.attributes[int(config_string[0])]
-        if config_string[1]:
-            ret["yattribute"] = self.experiment_data.attributes[int(config_string[1])]
-
-        entry_strings = []
-        for entry in config_string[2].split(","):
-            tmp = []
-            for elem in entry.split(":"):
-                if elem.isdigit():
-                    tmp.append(self.experiment_data.algorithms[int(elem)])
-                else:
-                    tmp.append(elem)
-            entry_strings.append(" ".join(tmp))
-        if entry_strings:
-            ret["entries_list"] = "\n".join(entry_strings)
-
-        ret["relative"] = False if config_string[3] == "0" else True
-        ret["groupby"] = "name" if config_string[4] == "0" else "domain"
-        ret["xscale"] = "log" if config_string[5] == "0" else "linear"
-        ret["yscale"] = "log" if config_string[6] == "0" else "linear"
-
-        ret["autoscale"] = False if config_string[7] == "0" else True
-        if not ret["autoscale"]:
-            x_parts = config_string[8].split(",")
-            ret["x_range"] = (float(x_parts[0]), float(x_parts[1]))
-            y_parts = config_string[9].split(",")
-            ret["y_range"] = (float(y_parts[0]), float(y_parts[1]))
-
-        ret["replace_zero"] = float(config_string[10])
-        if config_string[11]:
-            ret["xsize"] = int(config_string[11])
-        if config_string[12]:
-            ret["ysize"] = int(config_string[12])
-        if config_string[13]:
-            ret["marker_size"] = int(config_string[13])
-        if config_string[14]:
-            ret["marker_fill_alpha"] = float(config_string[14])
-        print(ret)
-        
-        return ret
+    def set_params_from_dict(self, params):
+        print("scatter set params from dict")
+        if "x_range" in params:
+            params["x_range"] = tuple(params["x_range"])
+        if "y_range" in params:
+            params["y_range"] = tuple(params["y_range"])
+        print(params)
+        self.param.update(params) #TODO: currently we need to make sure that the child calls this, maybe redesign...
+        print("SDFSDFSDFS")

@@ -8,8 +8,9 @@ from report import Report
 
 
 class ProblemTablereport(Report):
-    domain = param.Selector()
-    problem = param.Selector()
+    domain = param.Selector(default="--")
+    problem = param.Selector(default="--")
+
 
     def __init__(self, domain=None, problem=None, sizing_mode="stretch_both", **params):
         print("ProblemTablereport init")
@@ -20,6 +21,7 @@ class ProblemTablereport(Report):
             self.problem = problem
         print("ProblemTablereport init end")
 
+
     def set_experiment_data_dependent_parameters(self):
         print("ProblemTablereport set_experiment_data_dependent_parameters")
         param_updates = super().set_experiment_data_dependent_parameters()
@@ -29,7 +31,8 @@ class ProblemTablereport(Report):
         param_updates["problem"] = self.param.problem.objects[0]
         print("ProblemTablereport set_experiment_data_dependent_parameters end")
         return param_updates
-    
+
+
     @param.depends('domain', watch=True)
     def update_problems(self):
         print("ProblemTablereport update_problems")
@@ -37,6 +40,7 @@ class ProblemTablereport(Report):
             self.param.problem.objects = ["--"] + self.experiment_data.problems[self.domain]
             self.problem = self.param.problem.objects[0]
         print("ProblemTablereport update_problems end")
+
 
     def data_view(self):
         print("ProblemTablereport data_view")
@@ -52,25 +56,18 @@ class ProblemTablereport(Report):
                 formatters=tabulator_formatters, frozen_columns=['attribute'], sizing_mode=self.sizing_mode)
         print("ProblemTablereport data_view end")
         return self.view
-            
+
+
     def param_view(self):
         print("ProblemTablereport param_view (end)")
         return pn.Param(self.param)
-        
-    def get_param_config(self):
-        domain = self.domain if self.domain != "--" else ""
-        problem = self.problem if self.problem != "--" else ""
-        return f"{domain};{problem}"
 
 
-    # We set domain here directly since domain needs to be set *before* problem
-    def get_params_from_string(self, config_string):
-        print(f"ProblemTablereport get_params_from_string {config_string}") 
-        ret = dict()
-        if len(config_string) != 2:
-            return ret
-        if config_string[0] != "":
-            self.domain = config_string[0]
-        if config_string[1] != "":
-            ret["problem"] = config_string[1]
-        return ret
+    def get_params_as_dict(self):      
+        return super().get_params_as_dict()
+
+
+    # we set domain and problem sepearately because domain prepares the problem attribute with the possible values
+    def set_params_from_dict(self, params):
+        self.domain = params["domain"]
+        self.problem = params["problem"]

@@ -34,11 +34,12 @@ class Report(param.Parameterized):
 
     def deactivate(self):
         pass
-        
-    def get_param_config(self):
+
+    def get_params_as_dict(self):
+        d = { name : val for name, val in self.param.get_param_values()
+            if val != self.param.params()[name].default }
+        d.pop("name")
+        return d
+
+    def set_params_from_dict(self,params):
         pass
-        
-    # Returns a dictionary of parameters and values they should be set to 
-    # This dictionary is batch updated by the caller of this method
-    def get_params_from_string(self, config_string):
-        return dict()
