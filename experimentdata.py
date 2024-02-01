@@ -26,7 +26,8 @@ class ExperimentData():
   
     def __init__(self, properties_file=""):
         try:
-            self.data = pd.read_json(open(properties_file), orient="index")
+            # TODO: this might break in the future since read_json cannot handle passing json directly (although I don't do that?)
+            self.data = pd.read_json(properties_file, orient="index")
             self.attributes = [x for x in self.data.columns if x not in ["algorithm", "domain", "problem"]]
             self.numeric_attributes = [x for x in self.attributes if pd.api.types.is_numeric_dtype(self.data.dtypes[x])]
             self.algorithms = list(self.data.algorithm.unique())
