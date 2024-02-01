@@ -1,52 +1,25 @@
-QUESTIONS:
-
-general:
- - Which extensions would be interesting? (e.g. cactus, domainwise, taskwise)
- - discord channel for discussion / me asking detail questions?
- - priority of jupyter compatibility?
-
-details:
- - loading too long?
- - wildcards in scatter syntax?
- - mean/gmean
- - upload local properties needed?
- - table sorting needed?
- - formatting readability -> bright green hard to read (especially on gray but also in general)
-________________________________________________________________________________
-
 TODOS:
 
-before sprint:
-  
-maybe before sprint:
-- cross select vertical?
-- floating point formatting
-- index column width changing/too small?
-- enable sorting in Tablereports
-- scatter allow for wildcards in entries_list (e.g *v1* *v2*)
-- see to it that packages are on right version
-- scatter plot by order given in entries list
-
---------------------------------------------------------------------------------
-
 features:
+- scatter allow for wildcards in entries_list (e.g *v1* *v2*)
+- enable sorting in Tablereports
+- scatter plot by order given in entries list
 - use styling/min_wins in ProblemReport
 - cactusplot
 - Domain/Taskwise?
 - upload properties file?
 - loading screen when loading properties file?
 - scatter parameters for marker type/color
-- Titles for Crosselector widgets
+- cross select vertical?
 
 refactor:
-- warning about reading in json
+- index column width changing/too small?
+- floating point formatting
 - error messages (e.g. when properties is not a property file)
 - combine Diff and Absolute Report?
   -> otherwise, try to avoid computing all aggregates etc two times
 - reduce load time for scatter when grouping by domain
-- set widget for table.attributes (CrossSelector) in base class instead of all children
 - scatter: why did I have shared_axes = False?
-- see if we still need to check for set experiment data in table.data_view()
 - see that we don't waste time when reports are initialized with specific values
   -> also a problem when clicking link?
   -> should help prepare for use in jupyter
