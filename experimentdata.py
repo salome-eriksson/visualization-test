@@ -5,6 +5,8 @@ import pandas as pd
 
 class ExperimentData():
     def compute_ipc_score(self):
+        if "cost" not in self.data.index.get_level_values(0):
+            return
         upper_bounds = pd.read_json("upper_bounds.json", orient="index")
         upper_bounds = upper_bounds.set_index(["domain","problem"])
         costs = self.data.loc["cost"]
