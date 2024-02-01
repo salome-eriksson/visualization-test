@@ -79,10 +79,12 @@ class AbsoluteTablereport(Tablereport):
             return style
         for i, val in enumerate(numeric_values):
             if not pd.isnull(val):
-                y = ((val - min_val) / (max_val-min_val)*200).astype(int)
+                percentage = (val - min_val) / (max_val-min_val)
                 if min_wins:
-                  y = 200-y
-                style[i] = style[i]+ "color: #00{:02x}{:02x};".format(y,200-y)
+                  percentage = 1-percentage
+                green = (percentage*175).astype(int)
+                blue = ((1-percentage)*255).astype(int)
+                style[i] = style[i]+ "color: #00{:02x}{:02x};".format(green, blue)
         return style
 
 
