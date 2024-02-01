@@ -84,7 +84,6 @@ class Tablereport(Report):
     
     
     def __init__(self, **params):
-        print("TableReport init")
         self.placeholder = pn.Column(height=0, width=0) # used for the popup ProblemTableReport
         self.dummy = pn.widgets.Checkbox() # used for triggering the filter function
         self.unfolded = dict() # which attributes/domains for each attribute are unfolded in the table
@@ -108,11 +107,9 @@ class Tablereport(Report):
         self.view.style.apply(func=self.style_table_by_row, axis=1)
         self.view.on_click(self.on_click_callback)
         self.full_view = pn.Column(self.view, self.placeholder)
-        print("TableReport init end")
 
 
     def set_experiment_data_dependent_parameters(self):
-        print("Tablereport set_experiment_data_dependent_parameters")
         param_updates = super().set_experiment_data_dependent_parameters()
         
         # Reset fields.
@@ -139,7 +136,6 @@ class Tablereport(Report):
         pseudoindex = [x[0] if x[1]=="--" else (x[1] if x[2] == "--" else x[2]) for x in self.table_data.index]
         self.table_data.insert(0, "Index", pseudoindex)
         
-        print("Tablereport set_experiment_data_dependent_parameters end")
         return param_updates
 
 
@@ -164,7 +160,6 @@ class Tablereport(Report):
 
 
     def filter(self, df, dummy):
-        print("filter")
         if df.empty:
             return df
         
@@ -176,12 +171,10 @@ class Tablereport(Report):
             for d in doms:
                 indices += [(a,d,p) for p in self.experiment_data.problems[d]]
         indices.sort()
-        print("filter end")
         return df.loc[indices]
 
 
     def on_click_callback(self, e):
-        print("on click callback")
         row = self.view_data.iloc[e.row]
         attribute, domain, problem = row.name[0:3]
         
@@ -194,7 +187,6 @@ class Tablereport(Report):
                 probreport.data_view, name=f"{domain} - {problem}", contained=False, 
                 height=500, width=500, config = {"setStatus" : "maximized", "closeOnEscape" : True})
             self.placeholder.append(floatpanel)
-            print("on click problemreport end")
             return
 
         # clicked on domain aggregate -> (un)fold that domain for that attribute
@@ -215,7 +207,6 @@ class Tablereport(Report):
                     self.view.value = self.compute_view_data()
                     self.view.selection = []
                     self.view.selection = [e.row]
-                    print("on click attribute unfold end")
                     return
         
         # Changing the value of dummy forces the filter to be reapplied.
@@ -224,7 +215,6 @@ class Tablereport(Report):
         self.view.selection = []
         self.dummy.value = not self.dummy.value
         self.view.selection = [e.row]
-        print("on click end")
 
 
     def aggregate_where_necessary(self):
@@ -268,8 +258,6 @@ class Tablereport(Report):
 
     
     def aggregate_domains_for_attribute(self, attribute, attribute_data = None):
-        print(f"aggregating {attribute}")
-
         # Represents the slice of all domain aggregate rows, but without the Index column.
         rows, cols = (attribute, slice(self.experiment_data.domains[0], self.experiment_data.domains[-1]), "--"), self.table_data.columns[1:]
         # This can happen if there are no problems where all columns have a value for the attribute.
@@ -293,24 +281,18 @@ class Tablereport(Report):
 
 
     def data_view(self):
-        print("TableReport data_view")
-        
         self.aggregate_where_necessary()
         self.view_data = self.compute_view_data()
         self.view.value = self.view_data
-        print("TableReport data_view end")        
         return self.full_view
 
 
     def param_view(self):
-        print("TableReport param_view (end)")
         return self.param_view
 
 
     def deactivate(self):
-        print("TableReport on defocus")
         self.placeholder.clear()
-        print("TableReport on defocus end")
 
 
     def get_params_as_dict(self):
@@ -320,6 +302,7 @@ class Tablereport(Report):
         if "attributes" in params:
             params["attributes"] = [self.param.attributes.objects.index(a) for a in params["attributes"]]
         return params
+
 
     def set_params_from_dict(self, params):        
         if "attributes" in params:

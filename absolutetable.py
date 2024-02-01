@@ -13,10 +13,7 @@ class AbsoluteTablereport(Tablereport):
     
     
     def __init__(self, **params):
-        print("AbsoluteTablereport init")
         super().__init__(**params)
-        # ~ self.param_view = pn.Param(self.param,  widgets= {"algorithms": {"type": pn.widgets.CrossSelector, "definition_order" : False, "width" : 500},
-                                                          # ~ "attributes": {"type": pn.widgets.CrossSelector, "definition_order" : False, "width" : 500}})
         self.param_view = pn.Column(
             pn.pane.HTML("Attributes", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
             pn.widgets.CrossSelector.from_param(self.param.attributes, definition_order = False, width = 475, styles={'padding-left': '10px'}),
@@ -28,7 +25,9 @@ class AbsoluteTablereport(Tablereport):
                 ### Information
                 Data is organized by attribute, then domain, then problem. 
                 You can click on attributes/domains to unfold the next level, 
-                and reclick to fold again.
+                and reclick to fold again. Clicking on a concrete problem opens
+                a ProblemReport comparing all attributes on all algorithms for
+                this specific problem.
                 
                 Numeric values are aggregated over the set of instances where
                 all selected algorithms have a value for the corresponding attribute.
@@ -43,16 +42,13 @@ class AbsoluteTablereport(Tablereport):
                 """),
             width=500
         )
-        print("AbsoluteTablereport init end")
 
 
     def set_experiment_data_dependent_parameters(self):
-        print("AbsoluteTablereport set_experiment_data_dependent_parameters")
         param_updates = super().set_experiment_data_dependent_parameters()
         self.param.algorithms.objects = self.experiment_data.algorithms
         self.param.algorithms.default = self.experiment_data.algorithms
         param_updates["algorithms"] = self.experiment_data.algorithms
-        print("AbsoluteTablereport set_experiment_data_dependent_parameters end")
         return param_updates
 
 
@@ -89,7 +85,6 @@ class AbsoluteTablereport(Tablereport):
 
 
     def param_view(self):
-        print("AbsoluteTablereport param_view (end)")
         return self.param_view
 
 

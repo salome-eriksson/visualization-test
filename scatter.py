@@ -42,7 +42,6 @@ class Scatterplot(Report):
     
     
     def __init__(self, **params):
-        print("Scatterplot init")
         super().__init__(**params)
         self.param_view = pn.Column(
             pn.Param(self.param.xattribute),
@@ -84,24 +83,20 @@ class Scatterplot(Report):
             
         )
         self.data_view_in_progress = False
-        print("Scatterplot init end")
 
 
     def set_experiment_data_dependent_parameters(self):
-        print("Scatterplot set experiment data dependent parameters")
         param_updates = super().set_experiment_data_dependent_parameters()
         self.param.xattribute.objects = ["--", *self.experiment_data.numeric_attributes]
         param_updates["xattribute"] = "--"
         self.param.yattribute.objects = ["--", *self.experiment_data.numeric_attributes]
         param_updates["yattribute"] = "--"
         param_updates["available_algorithms"] =  "{}".format("\n".join(self.experiment_data.algorithms))
-        print("Scatterplot set experiment data dependent parameters end")
         return param_updates
 
 
     @param.depends('autoscale', watch=True)
     def set_scale_restrictions(self):
-        print("set scale restrictions")
         value = -1 if self.autoscale else None
         self.param.x_range.precedence = value
         self.param.y_range.precedence = value
@@ -120,26 +115,20 @@ class Scatterplot(Report):
             elif len(new_entry) == 1:
                 xalg = yalg = name = new_entry[0]
             else:
-                print(f"wrong formatting: {new_entry}")
                 continue
             invalid_algorithms = [alg for alg in [xalg,yalg] if alg not in self.experiment_data.algorithms]
-            if invalid_algorithms:
-                print(f"{' and '.join(invalid_algorithms)} not valid algorithm(s)")
-            else:
+            if not invalid_algorithms:
                 entries.append((xalg,yalg,name))
         return entries
 
 
     def data_view(self):
         if self.data_view_in_progress:
-            print("Scatterplot data view skipped - in progress")
             return
         algorithm_pairs = self.get_algorithm_pairs()
         if self.xattribute not in self.experiment_data.attributes or self.yattribute not in self.experiment_data.attributes or not algorithm_pairs:
-            print("Scatterplot data view skipped - invalid/empty config")
             return
-            
-        print("Scatterplot data view")
+
         self.data_view_in_progress = True
         logx = True if self.xscale == "log" else False
         logy = True if self.yscale == "log" else False
@@ -212,13 +201,11 @@ class Scatterplot(Report):
         # overall_plot.opts(shared_axes=False) TODO: I don't think I need this?
 
         self.data_view_in_progress = False
-        print("Scatterplot data view end")
         return overall_plot
 
     # TODO: figure out if we can do without the watcher, it causes unnecessary output
     @param.depends('available_algorithms', watch=True)
     def param_view(self):
-        print("Scatterplot param view (end)")
         self.param_view[3] = pn.pane.Markdown(f"**Available Algorithms:**\n {self.available_algorithms}")
         return self.param_view
 
@@ -236,11 +223,8 @@ class Scatterplot(Report):
 
 
     def set_params_from_dict(self, params):
-        print("scatter set params from dict")
         if "x_range" in params:
             params["x_range"] = tuple(params["x_range"])
         if "y_range" in params:
             params["y_range"] = tuple(params["y_range"])
-        print(params)
         self.param.update(params) #TODO: currently we need to make sure that the child calls this, maybe redesign...
-        print("SDFSDFSDFS")

@@ -21,10 +21,9 @@ pn.extension('floatpanel')
 class ReportViewer(param.Parameterized):
     reportType = param.Selector()
     properties_file = param.String(default="")
-    param_config = param.String()
+    param_config = param.String(precedence=-1)
 
     def __init__(self, **params):
-        print("ReportViewer init")
         super().__init__(**params)
 
         self.setting_param_config = False
@@ -67,21 +66,16 @@ class ReportViewer(param.Parameterized):
             ["xattribute", "yattribute", "entries_list", "relative",
              "groupby", "xscale", "yscale", "autoscale", "x_range", "y_range",
              "replace_zero", "xsize", "ysize", "marker_size", "marker_fill_alpha"])
-        
-        print("ReportViewer init end")
 
 
     @param.depends('properties_file', watch=True)
     def update_property_file(self):
-        print("ReportViewer update_property_file")
         self.experiment_data = ExperimentData(self.properties_file)
         for r in self.reports.values():
             r.update_experiment_data(self.experiment_data)
-        print("ReportViewer update_property_file end")
 
 
     def view(self):
-        print("ReportViewer view (end)")
         self.reports[self.previous_reportType].deactivate()
         self.previous_reportType = self.reportType
         return self.views[self.reportType]
@@ -97,15 +91,11 @@ class ReportViewer(param.Parameterized):
         params["reportType"] = sorted(self.reports.keys()).index(self.reportType)
         params["version"] = "1.0"
         self.param_config = base64.urlsafe_b64encode(zlib.compress(json.dumps(params).encode())).decode()
-        print("Updating param config")
-        print(params)
-        print(self.param_config)
         self.setting_param_config = False
 
 
     @param.depends("param_config", watch=True)
     def set_from_param_config(self):
-        print("set_from_param_config")
         if self.setting_param_config:
             return
         self.setting_params = True
@@ -117,13 +107,9 @@ class ReportViewer(param.Parameterized):
             })
             assert(params.pop("version") == "1.0")
             self.reports[self.reportType].set_params_from_dict(params)
-            print("Setting param config")
-            print(params)
-            print(self.param_config)
-            self.setting_params = False
         except Exception as ex:
-            print(ex)
-
+            pass
+        self.setting_params = False
 
 
 viewer = ReportViewer()

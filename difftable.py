@@ -15,7 +15,6 @@ class DiffTablereport(Tablereport):
     
     
     def __init__(self, **params):
-        print("DiffTablereport init")
         super().__init__(**params)
         self.param_view = pn.Param(self.param,  widgets= { "attributes": {"type": pn.widgets.CrossSelector, "definition_order" : False, "width" : 500}})
         
@@ -31,7 +30,9 @@ class DiffTablereport(Tablereport):
                 ### Information
                 Data is organized by attribute, then domain, then problem. 
                 You can click on attributes/domains to unfold the next level, 
-                and reclick to fold again.
+                and reclick to fold again. Clicking on a concrete problem opens
+                a ProblemReport comparing all attributes on all algorithms for
+                this specific problem.
                 
                 Numeric values are aggregated over the set of instances where
                 both algorithms have a value for the corresponding attribute.
@@ -49,18 +50,14 @@ class DiffTablereport(Tablereport):
                 """),
             width=500
         )
-        
-        print("DiffTablereport init end")
-        
-    
+
+
     def set_experiment_data_dependent_parameters(self):
-        print("DiffTablereport set_experiment_data_dependent_parameters")
         param_updates = super().set_experiment_data_dependent_parameters()
         self.param.algorithm1.objects = ["--", *self.experiment_data.algorithms]
         self.param.algorithm2.objects = ["--", *self.experiment_data.algorithms]
         param_updates["algorithm1"] = "--"
         param_updates["algorithm2"] = "--"
-        print("DiffTablereport set_experiment_data_dependent_parameters end")
         return param_updates
 
 
@@ -84,6 +81,7 @@ class DiffTablereport(Tablereport):
         else:
             return []
 
+
     def style_table_by_row(self, row):
         style = super().style_table_by_row(row)
         attribute = row.name[0]
@@ -102,7 +100,6 @@ class DiffTablereport(Tablereport):
 
         
     def param_view(self):
-        print("DiffTablereport param_view (end)")
         return self.param_view
 
 
