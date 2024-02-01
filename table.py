@@ -181,7 +181,7 @@ class Tablereport(Report):
         # clicked on concrete problem -> open problem wise report
         if problem != "--":
             probreport = ProblemTablereport(
-                experiment_data = self.experiment_data, sizing_mode = "fixed",
+                experiment_data = self.experiment_data, sizing_mode = "stretch_width",
                 domain = domain, problem = problem)
             floatpanel = pn.layout.FloatPanel(
                 probreport.data_view, name=f"{domain} - {problem}", contained=False, 
