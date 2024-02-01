@@ -109,17 +109,20 @@ class ReportViewer(param.Parameterized):
         if self.setting_param_config:
             return
         self.setting_params = True
-        params = json.loads(zlib.decompress(base64.urlsafe_b64decode(self.param_config.encode())))
-        self.param.update({
-            "properties_file": params.pop("properties_file"),
-            "reportType": sorted(self.reports.keys())[int(params.pop("reportType"))],
-        })
-        assert(params.pop("version") == "1.0")
-        self.reports[self.reportType].set_params_from_dict(params)
-        print("Setting param config")
-        print(params)
-        print(self.param_config)
-        self.setting_params = False
+        try:
+            params = json.loads(zlib.decompress(base64.urlsafe_b64decode(self.param_config.encode())))
+            self.param.update({
+                "properties_file": params.pop("properties_file"),
+                "reportType": sorted(self.reports.keys())[int(params.pop("reportType"))],
+            })
+            assert(params.pop("version") == "1.0")
+            self.reports[self.reportType].set_params_from_dict(params)
+            print("Setting param config")
+            print(params)
+            print(self.param_config)
+            self.setting_params = False
+        except Exception as ex:
+            print(ex)
 
 
 
