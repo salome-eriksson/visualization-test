@@ -79,6 +79,7 @@ class Tablereport(Report):
     })
 
     attributes = param.ListSelector()
+    domains = param.ListSelector()
     custom_min_wins = param.Dict(default={})
     custom_aggregators = param.Dict(default={})
     
@@ -121,7 +122,11 @@ class Tablereport(Report):
         self.computed["__columns"] = self.experiment_data.algorithms
         self.param.attributes.objects = self.experiment_data.attributes
         self.param.attributes.default = self.experiment_data.attributes
+        self.computed["__domains"] = self.experiment_data.algorithms
+        self.param.domains.objects = self.experiment_data.domains
+        self.param.domains.default = self.experiment_data.domains
         param_updates["attributes"] =  self.experiment_data.attributes
+        param_updates["domains"] = self.experiment_data.domains
         param_updates["custom_min_wins"] = dict()
         param_updates["custom_aggregators"] = dict()
         
@@ -167,8 +172,10 @@ class Tablereport(Report):
         for a, doms in self.unfolded.items():
             if a not in self.attributes:
                 continue
-            indices += [(a,d,"--") for d in self.experiment_data.domains]
+            indices += [(a,d,"--") for d in self.domains]
             for d in doms:
+                if d not in self.domains:
+                    continue
                 indices += [(a,d,p) for p in self.experiment_data.problems[d]]
         indices.sort()
         return df.loc[indices]
@@ -220,6 +227,7 @@ class Tablereport(Report):
     def aggregate_where_necessary(self):
         current_columns = self.get_current_columns()
         columns_outdated = current_columns != self.computed["__columns"]
+        domains_outdated = self.domains != self.computed["__domains"]
         
         # If the columns used for aggreagtion are outdated, recompute dropna to only consider current columns.
         if columns_outdated:
@@ -228,11 +236,12 @@ class Tablereport(Report):
                 return
             self.exp_data_dropna = self.experiment_data.data[unique_columns].dropna()
             self.computed["__columns"] = current_columns
+            self.computed["__domains"] = self.domains
       
         cols_without_index = self.table_data.columns[1:]
         for attribute in self.experiment_data.numeric_attributes:
             aggregator = self.custom_aggregators[attribute] if attribute in self.custom_aggregators else self.DEFAULT_AGGREGATORS[attribute]
-            if not columns_outdated and aggregator == self.computed[attribute]["aggregator"]:
+            if not columns_outdated and not domains_outdated and aggregator == self.computed[attribute]["aggregator"]:
                 continue
 
             self.table_data.loc[(attribute, "--", "--"),"Index"] = f"{attribute} ({aggregator})"
@@ -243,7 +252,9 @@ class Tablereport(Report):
             if attribute not in self.exp_data_dropna.index:
                 new_aggregates = np.NaN
             else:
-                attribute_data = self.exp_data_dropna.loc[attribute].apply(pd.to_numeric, errors='coerce')
+                attribute_data = self.exp_data_dropna.loc[attribute]
+                attribute_data = attribute_data.loc[attribute_data.index.get_level_values('domain').isin(self.domains)]
+                attribute_data = attribute_data.apply(pd.to_numeric, errors='coerce')
                 # Since gmean is not a built-in function we need to set the variable to the actual function here.
                 if aggregator == "gmean":
                     aggregator = stats.gmean
@@ -301,10 +312,14 @@ class Tablereport(Report):
         # shorten the attributes parameter by using indices instead of the attribute names
         if "attributes" in params:
             params["attributes"] = [self.param.attributes.objects.index(a) for a in params["attributes"]]
+        if "domains" in params:
+            params["domains"] = [self.param.domains.objects.index(d) for d in params["domains"]]
         return params
 
 
     def set_params_from_dict(self, params):        
         if "attributes" in params:
             params["attributes"] = [self.param.attributes.objects[x] for x in params["attributes"]]
+        if "domains" in params:
+            params["domains"] = [self.param.domains.objects[x] for x in params["domains"]]
 

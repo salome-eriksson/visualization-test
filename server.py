@@ -53,10 +53,10 @@ class ReportViewer(param.Parameterized):
         self.param.watch(self.update_param_config, ["properties_file", "reportType"])
         self.reports["Absolute Report"].param.watch(
             self.update_param_config,
-            ["attributes", "custom_min_wins", "custom_aggregators", "algorithms"])
+            ["attributes", "domains", "custom_min_wins", "custom_aggregators", "algorithms"])
         self.reports["Diff Report"].param.watch(
             self.update_param_config,
-            ["attributes", "custom_min_wins", "custom_aggregators", 
+            ["attributes", "domains", "custom_min_wins", "custom_aggregators", 
              "algorithm1", "algorithm2", "percentual"])
         self.reports["Problem Report"].param.watch(
             self.update_param_config,

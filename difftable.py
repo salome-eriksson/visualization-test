@@ -21,6 +21,8 @@ class DiffTablereport(Tablereport):
         self.param_view = pn.Column(
             pn.pane.HTML("Attributes", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
             pn.widgets.CrossSelector.from_param(self.param.attributes, definition_order = False, width = 475, styles={'padding-left': '10px'}),
+            pn.pane.HTML("Domains", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
+            pn.widgets.CrossSelector.from_param(self.param.domains, definition_order = False, width = 475, styles={'padding-left': '10px'}),
             pn.Param(self.param.algorithm1),
             pn.Param(self.param.algorithm2),
             pn.Param(self.param.custom_min_wins),
