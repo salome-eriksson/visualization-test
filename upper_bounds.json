@@ -5799,11 +5799,6 @@
     "problem": "p19.pddl",
     "upper_bound": 38
   },
-  "elevators-00-adl-m10-strips.pddl": {
-    "domain": "elevators-00-adl",
-    "problem": "m10-strips.pddl",
-    "upper_bound": null
-  },
   "elevators-00-adl-s1-0.pddl": {
     "domain": "elevators-00-adl",
     "problem": "s1-0.pddl",
