@@ -1,5 +1,8 @@
 #! /usr/bin/env python3
 
+from bokeh.plotting import figure
+from bokeh.models import HoverTool, TapTool, Legend, LegendItem, Span
+from functools import partial
 import math
 import numpy as np
 import param
@@ -8,18 +11,22 @@ import holoviews as hv
 import hvplot.pandas
 import panel as pn
 
-# ~ from algorithm_selector import AlgorithmSelectorReplace, AlgorithmSelectorExplicit
 from report import Report
 from experimentdata import ExperimentData
+from problemtable import ProblemTablereport
 
 
 hv.extension('bokeh')
 
-MARKERS = ["x","circle", "square", "triangle", "asterisk", "diamond", "cross", "star", "inverted_triangle", "plus", "x", "hex", "y",
-           "circle_cross", "square_cross", "diamond_cross",
-           "circle_dot", "square_dot", "triangle_dot", "diamond_dot", "hex_dot", "star_dot",
-           "circle_x", "square_x", "circle_y", "square_pin", "triangle_pin"]
-COLORS = ["black", "red", "blue", "teal", "orange", "purple", "olive", "lime"]
+MARKERS = ["x", "circle", "square", "triangle", "asterisk", 
+           "diamond", "cross", "star", "inverted_triangle", "plus", 
+           "hex", "y", "circle_cross", "square_cross", "diamond_cross",
+           "circle_x", "square_x", "square_pin", "triangle_pin"]
+COLORS = ["black", "red", "blue", "teal", "orange", 
+          "purple", "olive", "lime", "cyan"]
+
+
+        
 
 
 class Scatterplot(Report):
@@ -37,12 +44,15 @@ class Scatterplot(Report):
     replace_zero = param.Number(default = 0)
     xsize = param.Integer(default = 500)
     ysize = param.Integer(default = 500)
-    marker_size = param.Integer(default = 75, bounds = (5,250))
+    marker_size = param.Integer(default = 7, bounds = (2,50))
     marker_fill_alpha = param.Number(default = 0.0, bounds=(0.0,1.0))
+    markers = param.List(default=MARKERS)
+    colors = param.List(default=COLORS)
     
     
     def __init__(self, **params):
         super().__init__(**params)
+        self.placeholder = pn.Column(height=0, width=0) # used for the popup ProblemTableReport
         self.param_view = pn.Column(
             pn.Param(self.param.xattribute),
             pn.Param(self.param.yattribute),
@@ -60,6 +70,8 @@ class Scatterplot(Report):
             pn.Param(self.param.ysize),
             pn.Param(self.param.marker_size),
             pn.Param(self.param.marker_fill_alpha),
+            pn.Param(self.param.markers),
+            pn.Param(self.param.colors),
             pn.pane.Markdown("""
                 ### Information
                 In entries list you can specify several combinations of algorithms 
@@ -120,6 +132,19 @@ class Scatterplot(Report):
             if not invalid_algorithms:
                 entries.append((xalg,yalg,name))
         return entries
+  
+    def on_click_callback(self, attr, old, new, df):
+        if new:
+            domain = df.iloc[new[0]]['domain']
+            problem = df.iloc[new[0]]['problem']
+            
+            probreport = ProblemTablereport(
+                experiment_data = self.experiment_data, sizing_mode = "stretch_width",
+                domain = domain, problem = problem)
+            floatpanel = pn.layout.FloatPanel(
+                probreport.data_view, name=f"{domain} - {problem}", contained=False, 
+                height=500, width=500, config = {"setStatus" : "maximized", "closeOnEscape" : True})
+            self.placeholder.append(floatpanel)
 
 
     def data_view(self):
@@ -130,47 +155,45 @@ class Scatterplot(Report):
             return
 
         self.data_view_in_progress = True
-        logx = True if self.xscale == "log" else False
-        logy = True if self.yscale == "log" else False
         xlabel = self.xattribute
         ylabel = self.yattribute
 
         # Build the DataFrame used in the plot.
         frames = []
-        # TODO: this was a try to speed up the groupby part of hvplot, but it did not work
         index_order = [self.groupby, 'domain' if self.groupby == 'name' else 'name', 'problem']
         for (xalg, yalg, name) in algorithm_pairs:
             xcol = self.experiment_data.data.loc[self.xattribute][xalg]
             ycol = self.experiment_data.data.loc[self.yattribute][yalg]
-            new_frame = pd.DataFrame({'x':xcol, 'y':ycol, 'name':name}).reset_index().set_index(index_order)
+            new_frame = pd.DataFrame({'x':xcol, 'y':ycol, 'yrel': ycol, 'name':name}).reset_index().set_index(index_order)
             frames.append(new_frame)
         overall_frame = pd.concat(frames).dropna(how='all')
         overall_frame.replace(0, self.replace_zero, inplace=True)
         overall_frame.sort_index(level=0, inplace=True)
+        xcol = 'x'
+        ycol = 'y' if not self.relative else 'yrel'
+        overall_frame['yrel'] = overall_frame.y.div(overall_frame.x)
+        overall_frame.loc[~np.isfinite(overall_frame['yrel']), 'yrel'] = np.nan
 
-        if self.relative:
-            overall_frame = overall_frame[overall_frame['x'] != 0]
-            overall_frame['y'] = overall_frame['y']/overall_frame['x']
         if self.xscale == "log":
-            overall_frame = overall_frame[overall_frame['x'] > 0]
+            overall_frame = overall_frame[overall_frame[xcol] > 0]
         if self.yscale == "log":
-            overall_frame = overall_frame[overall_frame['y'] > 0]
+            overall_frame = overall_frame[overall_frame[ycol] > 0]
 
         if overall_frame.empty:
             self.data_view_in_progress = False
             return pn.pane.Markdown("All points have been dropped")
 
         # Compute min and max values.
-        xmax = overall_frame['x'].max()
-        xmin = overall_frame['x'].min()
-        ymax = overall_frame['y'].max()
-        ymin = overall_frame['y'].min()
+        xmax = overall_frame[xcol].max()
+        xmin = overall_frame[xcol].min()
+        ymax = overall_frame[ycol].max()
+        ymin = overall_frame[ycol].min()
 
         # Compute failed values.
         x_failed = int(10 ** math.ceil(math.log10(xmax))) if self.xscale == "log" else xmax*1.1
         y_failed = int(10 ** math.ceil(math.log10(ymax))) if self.yscale == "log" else ymax*1.1
-        overall_frame['x'].replace(np.nan,x_failed, inplace=True)
-        overall_frame['y'].replace(np.nan,y_failed, inplace=True)
+        overall_frame[xcol].replace(np.nan,x_failed, inplace=True)
+        overall_frame[ycol].replace(np.nan,y_failed, inplace=True)
         
         # Compute ranges if they are not specified.
         if self.autoscale:
@@ -179,29 +202,52 @@ class Scatterplot(Report):
               "y_range" : (ymin*0.9, y_failed*1.1)
             })
         
-        # Build the plot.
-        plot = overall_frame.hvplot.scatter(x='x', y='y',
-                xlabel=xlabel, ylabel=ylabel, logx=logx, logy=logy, 
-                frame_width = self.xsize, frame_height = self.ysize, by=self.groupby,
-                hover_cols=['domain', 'problem', 'name'],
-                marker=MARKERS, fill_color=COLORS, line_color=COLORS,
-                fill_alpha=self.marker_fill_alpha, size=self.marker_size)
-        plot.opts(legend_position='right')
-        plot.opts(xlim=(self.x_range))
-        plot.opts(ylim=(self.y_range))
-
-        # Create helper lines for failed values and equality.
-        helper_plots = hv.HLine(y_failed).opts(color="red", line_width=1)*hv.VLine(x_failed).opts(color="red", line_width=1)
-        if self.relative:
-            helper_plots = helper_plots * hv.HLine(1).opts(color="black", line_width=1)
+        
+        indices = []
+        if self.groupby == "name":
+          indices = [name for _, _, name in algorithm_pairs]
         else:
-            helper_plots = helper_plots * hv.Slope(slope=1, y_intercept=0).opts(color="black", line_width=1)
-
-        overall_plot = plot * helper_plots
-        # overall_plot.opts(shared_axes=False) TODO: I don't think I need this?
+          indices = list(set(overall_frame.index.get_level_values(0)))
+          indices.sort()
+        index_max_length = max(len(i) for i in indices)
+        plot = figure(height=self.xsize, width=self.ysize + 111 + int(5.15*index_max_length),
+                      x_axis_label=xlabel, y_axis_label = ylabel,
+                      x_axis_type = self.xscale, y_axis_type = self.yscale,
+                      x_range = self.x_range, y_range = self.y_range)
+        legend_items = []
+        for i, index in enumerate(indices):
+          df = overall_frame.loc[[index]].reset_index()
+          p = plot.scatter(x=xcol, y=ycol, source=df, 
+              line_color=self.colors[i%len(COLORS)], marker=self.markers[i%len(MARKERS)], 
+              fill_color=self.colors[i%len(COLORS)], fill_alpha=self.marker_fill_alpha, 
+              size=self.marker_size, muted_fill_alpha = min(0.1,self.marker_fill_alpha))
+          p.data_source.selected.on_change('indices', partial(self.on_click_callback, df=df))
+          legend_items.append(LegendItem(label=index, renderers = [plot.renderers[i]]))
+        
+        # helper lines
+        plot.renderers.extend([Span(location=x_failed, dimension='height', line_color='red')])
+        plot.renderers.extend([Span(location=y_failed, dimension='width', line_color='red')])
+        min_point = min(self.x_range[0],self.y_range[0])
+        max_point = max(self.x_range[1],self.y_range[1])
+        plot.line(x=[min_point, max_point], y=[1,1] if self.relative else [min_point, max_point], color='black')
+        
+        # legend
+        legend = Legend(items = legend_items)
+        legend.click_policy='mute'
+        plot.add_layout(legend, 'right')
+        
+        plot.add_tools(HoverTool(tooltips=[
+          ('Domain', '@domain'),
+          ('Problem', '@problem'),
+          ('Name', '@name'),
+          ('x', '@x'),
+          ('y', '@y'),
+          ('yrel', '@yrel'),
+          ]))
+        plot.add_tools(TapTool())
 
         self.data_view_in_progress = False
-        return overall_plot
+        return pn.Column(plot, self.placeholder)
 
     # TODO: figure out if we can do without the watcher, it causes unnecessary output
     @param.depends('available_algorithms', watch=True)
