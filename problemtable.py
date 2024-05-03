@@ -76,3 +76,4 @@ class ProblemTablereport(Report):
     def set_params_from_dict(self, params):
         self.domain = params["domain"]
         self.problem = params["problem"]
+        self.algorithms = params["algorithms"]
