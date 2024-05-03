@@ -172,7 +172,7 @@ class Scatterplot(Report):
         xcol = 'x'
         ycol = 'y' if not self.relative else 'yrel'
         overall_frame['yrel'] = overall_frame.y.div(overall_frame.x)
-        overall_frame.loc[~np.isfinite(overall_frame['yrel']), 'yrel'] = np.nan
+        overall_frame.loc[~np.isfinite(overall_frame['yrel'].astype(float)), 'yrel'] = np.nan
 
         if self.xscale == "log":
             overall_frame = overall_frame[overall_frame[xcol] > 0]
@@ -205,24 +205,38 @@ class Scatterplot(Report):
         
         indices = []
         if self.groupby == "name":
-          indices = [name for _, _, name in algorithm_pairs]
+            indices = [name for _, _, name in algorithm_pairs]
         else:
-          indices = list(set(overall_frame.index.get_level_values(0)))
-          indices.sort()
-        index_max_length = max(len(i) for i in indices)
-        plot = figure(height=self.xsize, width=self.ysize + 111 + int(5.15*index_max_length),
+            indices = list(set(overall_frame.index.get_level_values(0)))
+            indices.sort()
+        
+        # compute appropriate number of columns and height of legend
+        indices_length = [len(i) for i in indices]
+        ncols = 1
+        for i in range(len(indices)):
+            ncols += 1
+            nrows = math.ceil(len(indices)/ncols)
+            if (nrows*(ncols-1) >= len(indices)): #no rows gained
+                continue
+            max_num_chars_per_column = [max(indices_length[x*nrows:min((x+1)*nrows, len(indices))]) for x in range(ncols)]
+            width = sum([7*x+20 for x in max_num_chars_per_column])+20
+            if (width > self.xsize):
+                ncols -= 1
+                break
+            
+        plot = figure(width=self.xsize, height=self.ysize + 23*math.ceil(len(indices)/ncols),  
                       x_axis_label=xlabel, y_axis_label = ylabel,
                       x_axis_type = self.xscale, y_axis_type = self.yscale,
                       x_range = self.x_range, y_range = self.y_range)
         legend_items = []
         for i, index in enumerate(indices):
-          df = overall_frame.loc[[index]].reset_index()
-          p = plot.scatter(x=xcol, y=ycol, source=df, 
-              line_color=self.colors[i%len(COLORS)], marker=self.markers[i%len(MARKERS)], 
-              fill_color=self.colors[i%len(COLORS)], fill_alpha=self.marker_fill_alpha, 
-              size=self.marker_size, muted_fill_alpha = min(0.1,self.marker_fill_alpha))
-          p.data_source.selected.on_change('indices', partial(self.on_click_callback, df=df))
-          legend_items.append(LegendItem(label=index, renderers = [plot.renderers[i]]))
+            df = overall_frame.loc[[index]].reset_index()
+            p = plot.scatter(x=xcol, y=ycol, source=df, 
+                line_color=self.colors[i%len(COLORS)], marker=self.markers[i%len(MARKERS)], 
+                fill_color=self.colors[i%len(COLORS)], fill_alpha=self.marker_fill_alpha, 
+                size=self.marker_size, muted_fill_alpha = min(0.1,self.marker_fill_alpha))
+            p.data_source.selected.on_change('indices', partial(self.on_click_callback, df=df))
+            legend_items.append(LegendItem(label=index, renderers = [plot.renderers[i]]))
         
         # helper lines
         plot.renderers.extend([Span(location=x_failed, dimension='height', line_color='red')])
@@ -234,16 +248,17 @@ class Scatterplot(Report):
         # legend
         legend = Legend(items = legend_items)
         legend.click_policy='mute'
-        plot.add_layout(legend, 'right')
+        plot.add_layout(legend, 'below')
+        plot.legend.ncols = ncols
         
         plot.add_tools(HoverTool(tooltips=[
-          ('Domain', '@domain'),
-          ('Problem', '@problem'),
-          ('Name', '@name'),
-          ('x', '@x'),
-          ('y', '@y'),
-          ('yrel', '@yrel'),
-          ]))
+            ('Domain', '@domain'),
+            ('Problem', '@problem'),
+            ('Name', '@name'),
+            ('x', '@x'),
+            ('y', '@y'),
+            ('yrel', '@yrel'),
+            ]))
         plot.add_tools(TapTool())
 
         self.data_view_in_progress = False
