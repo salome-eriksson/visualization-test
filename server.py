@@ -65,7 +65,8 @@ class ReportViewer(param.Parameterized):
             self.update_param_config,
             ["xattribute", "yattribute", "entries_list", "relative",
              "groupby", "xscale", "yscale", "autoscale", "x_range", "y_range",
-             "replace_zero", "xsize", "ysize", "marker_size", "marker_fill_alpha"])
+             "replace_zero", "xsize", "ysize", "marker_size", "marker_fill_alpha",
+             "markers", "colors"])
 
 
     @param.depends('properties_file', watch=True)
@@ -76,7 +77,8 @@ class ReportViewer(param.Parameterized):
 
 
     def view(self):
-        self.reports[self.previous_reportType].deactivate()
+        if (self.previous_reportType != self.reportType):
+            self.reports[self.previous_reportType].deactivate()
         self.previous_reportType = self.reportType
         return self.views[self.reportType]
 

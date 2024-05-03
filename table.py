@@ -85,7 +85,8 @@ class Tablereport(Report):
     
     
     def __init__(self, **params):
-        self.placeholder = pn.Column(height=0, width=0) # used for the popup ProblemTableReport
+        self.placeholder = pn.Column(height=0, width=0) # used for the floatpanels that show ProblemTableReports
+        self.problemreports = [] # used to store the ProblemTableReport shown in the floatpanels
         self.dummy = pn.widgets.Checkbox() # used for triggering the filter function
         self.unfolded = dict() # which attributes/domains for each attribute are unfolded in the table
         self.computed = dict() # per attribute: used aggregator, are domain aggregatos up to date
@@ -187,12 +188,12 @@ class Tablereport(Report):
         
         # clicked on concrete problem -> open problem wise report
         if problem != "--":
-            probreport = ProblemTablereport(
+            self.problemreports.append(ProblemTablereport(
                 experiment_data = self.experiment_data, sizing_mode = "stretch_width",
-                domain = domain, problem = problem)
+                domain = domain, problem = problem))
             floatpanel = pn.layout.FloatPanel(
-                probreport.data_view, name=f"{domain} - {problem}", contained=False, 
-                height=500, width=500, config = {"setStatus" : "maximized", "closeOnEscape" : True})
+                self.problemreports[-1].data_view, name = f"{domain} - {problem}", contained = False, 
+                height = 750, width = 750, position = "center", config = {"closeOnEscape" : True})
             self.placeholder.append(floatpanel)
             return
 
@@ -303,6 +304,7 @@ class Tablereport(Report):
 
 
     def deactivate(self):
+        self.problemreports.clear()
         self.placeholder.clear()
 
 

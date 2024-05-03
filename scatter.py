@@ -52,7 +52,10 @@ class Scatterplot(Report):
     
     def __init__(self, **params):
         super().__init__(**params)
-        self.placeholder = pn.Column(height=0, width=0) # used for the popup ProblemTableReport
+        self.placeholder = pn.Column(height=0, width=0) # used for the floatpanels that show ProblemTableReports
+        self.problemreports = [] # used to store the ProblemTableReport shown in the floatpanels
+        self.view = pn.Column(figure())
+        self.full_view = pn.Column(self.view, self.placeholder)
         self.param_view = pn.Column(
             pn.Param(self.param.xattribute),
             pn.Param(self.param.yattribute),
@@ -133,20 +136,26 @@ class Scatterplot(Report):
                 entries.append((xalg,yalg,name))
         return entries
   
+  
     def on_click_callback(self, attr, old, new, df):
         if new:
             domain = df.iloc[new[0]]['domain']
             problem = df.iloc[new[0]]['problem']
             
-            probreport = ProblemTablereport(
+            self.problemreports.append(ProblemTablereport(
                 experiment_data = self.experiment_data, sizing_mode = "stretch_width",
-                domain = domain, problem = problem)
+                domain = domain, problem = problem))
             floatpanel = pn.layout.FloatPanel(
-                probreport.data_view, name=f"{domain} - {problem}", contained=False, 
-                height=500, width=500, config = {"setStatus" : "maximized", "closeOnEscape" : True})
+                self.problemreports[-1].data_view, name = f"{domain} - {problem}", contained = False, 
+                height = 750, width = 750, position = "center", config = {"closeOnEscape" : True})
             self.placeholder.append(floatpanel)
-
-
+            
+            
+    def deactivate(self):
+        self.problemreports.clear()
+        self.placeholder.clear()
+        
+        
     def data_view(self):
         if self.data_view_in_progress:
             return
@@ -262,7 +271,9 @@ class Scatterplot(Report):
         plot.add_tools(TapTool())
 
         self.data_view_in_progress = False
-        return pn.Column(plot, self.placeholder)
+        
+        self.view[0] = plot
+        return self.full_view
 
     # TODO: figure out if we can do without the watcher, it causes unnecessary output
     @param.depends('available_algorithms', watch=True)
