@@ -77,8 +77,9 @@ class Scatterplot(Report):
             pn.Param(self.param.colors),
             pn.pane.Markdown("""
                 ### Information
-                In entries list you can specify several combinations of algorithms 
-                that you want to compare against each other, one combination per row:
+                In entries list you can specify several combinations of 
+                algorithms that you want to compare against each other, one 
+                combination per row:
                 
                 - "alg1" will use alg1 on both the x and y axis, 
                   and has legend entry "alg1"
@@ -87,13 +88,19 @@ class Scatterplot(Report):
                 - "alg1 alg2 x" will use alg1 on the x and alg2 on the y axis, 
                   and has legend entry "x"
                 
-                If "Autoscale" is deactivated, you can specify the x and y ranges 
-                of the plot yourself; otherwise it will be computed based on
-                min/max values of the data points.
+                If "Autoscale" is deactivated, you can specify the x and y 
+                ranges of the plot yourself; otherwise it will be computed 
+                based on min/max values of the data points.
                 
                 For relative or log plots you can use "Replace zero" to replace 
                 all 0 values with the chosen number. Otherwise data points with 
                 a 0 will be dropped.
+                
+                Clicking on a datapoint will highlight this point and open a 
+                popup with a ProblemTablereport for the particular problem. 
+                Clicking anywhere else in the plot removes the highlight. 
+                Several popups can be open at the same time, but they will be
+                removed when the ReportType is changed.
             """)
             
         )

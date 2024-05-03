@@ -28,19 +28,21 @@ class AbsoluteTablereport(Tablereport):
                 Data is organized by attribute, then domain, then problem. 
                 You can click on attributes/domains to unfold the next level, 
                 and reclick to fold again. Clicking on a concrete problem opens
-                a ProblemReport comparing all attributes on all algorithms for
-                this specific problem.
+                a ProblemReport comparing all attributes for this specific 
+                problem. Several popups can be open at the same time, but they 
+                will be removed when the ReportType is changed.
                 
-                Numeric values are aggregated over the set of instances where
-                all selected algorithms have a value for the corresponding attribute.
-                You can customize which aggregator to use with the dictionary 
-                "custom aggregators", for example `{"expansions" : "gmean"}`.
-                Currently supported aggregators are "sum", "mean" and "gmean".
+                Numeric values are aggregated over the set of instances where 
+                all selected algorithms have a value for the corresponding 
+                attribute. You can customize which aggregator to use with the 
+                dictionary "custom aggregators", for example `{"expansions" : 
+                "gmean"}`. Currently supported aggregators are "sum", "mean" 
+                and "gmean".
                 
                 Numeric values are also color-coded, with blue denoting a worse 
-                and green a better value. You can customize whether the smaller value 
-                is better or not with the dictionary "custom min wins", for 
-                example `{"expansions" : True}` means smaller is better.
+                and green a better value. You can customize whether the smaller 
+                value is better or not with the dictionary "custom min wins", 
+                for example `{"expansions" : True}` means smaller is better.
                 """),
             width=500
         )
