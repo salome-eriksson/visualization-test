@@ -28,6 +28,7 @@ class DiffTablereport(Tablereport):
             pn.Param(self.param.custom_min_wins),
             pn.Param(self.param.custom_aggregators),
             pn.Param(self.param.percentual),
+            pn.Param(self.param.precision),
             pn.pane.Markdown("""
                 ### Information
                 Data is organized by attribute, then domain, then problem. 

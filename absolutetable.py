@@ -23,6 +23,7 @@ class AbsoluteTablereport(Tablereport):
             pn.widgets.CrossSelector.from_param(self.param.algorithms, definition_order = False, width = 475, styles={'padding-left': '10px'}),
             pn.Param(self.param.custom_min_wins),
             pn.Param(self.param.custom_aggregators),
+            pn.Param(self.param.precision),
             pn.pane.Markdown("""
                 ### Information
                 Data is organized by attribute, then domain, then problem. 

@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+from bokeh.models.widgets.tables import HTMLTemplateFormatter
 from copy import deepcopy
 import math
 import numpy as np
@@ -82,6 +83,7 @@ class Tablereport(Report):
     domains = param.ListSelector()
     custom_min_wins = param.Dict(default={})
     custom_aggregators = param.Dict(default={})
+    precision = param.Integer(default=3)
     
     
     def __init__(self, **params):
@@ -296,6 +298,23 @@ class Tablereport(Report):
         self.aggregate_where_necessary()
         self.view_data = self.compute_view_data()
         self.view.value = self.view_data
+        
+        template = f"""
+          <%= function formatnumber() {{
+            f_val = parseFloat(value);
+            if (!isNaN(f_val)) {{
+              if (Number.isInteger(f_val)) {{
+                return '<div style="text-align:right">' + f_val + "</div>";
+              }} else {{
+                return '<div style="text-align:right">' + f_val.toFixed({self.precision}) + "</div>";
+              }}
+            }} else {{
+              return  value;
+            }}
+          }}() %>
+        """
+        
+        self.view.formatters = {x : HTMLTemplateFormatter(template=template) for x in self.view_data.columns }
         return self.full_view
 
 
