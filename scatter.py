@@ -148,10 +148,11 @@ class Scatterplot(Report):
         if new:
             domain = df.iloc[new[0]]['domain']
             problem = df.iloc[new[0]]['problem']
+            algs = df.iloc[new[0]]['algs']
             
             self.problemreports.append(ProblemTablereport(
                 experiment_data = self.experiment_data, sizing_mode = "stretch_width",
-                domain = domain, problem = problem))
+                domain = domain, problem = problem, algorithms = algs))
             floatpanel = pn.layout.FloatPanel(
                 self.problemreports[-1].data_view, name = f"{domain} - {problem}", contained = False, 
                 height = 750, width = 750, position = "center", config = {"closeOnEscape" : True})
@@ -180,7 +181,8 @@ class Scatterplot(Report):
         for (xalg, yalg, name) in algorithm_pairs:
             xcol = self.experiment_data.data.loc[self.xattribute][xalg]
             ycol = self.experiment_data.data.loc[self.yattribute][yalg]
-            new_frame = pd.DataFrame({'x':xcol, 'y':ycol, 'yrel': ycol, 'name':name}).reset_index().set_index(index_order)
+            algs = [xalg] if xalg == yalg else [xalg, yalg]
+            new_frame = pd.DataFrame({'x':xcol, 'y':ycol, 'yrel': ycol, 'name':name, 'algs': [algs]*len(xcol)}).reset_index().set_index(index_order)
             frames.append(new_frame)
         overall_frame = pd.concat(frames).dropna(how='all')
         overall_frame.replace(0, self.replace_zero, inplace=True)

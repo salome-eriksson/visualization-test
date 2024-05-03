@@ -190,7 +190,7 @@ class Tablereport(Report):
         if problem != "--":
             self.problemreports.append(ProblemTablereport(
                 experiment_data = self.experiment_data, sizing_mode = "stretch_width",
-                domain = domain, problem = problem))
+                domain = domain, problem = problem, algorithms = self.get_current_columns()))
             floatpanel = pn.layout.FloatPanel(
                 self.problemreports[-1].data_view, name = f"{domain} - {problem}", contained = False, 
                 height = 750, width = 750, position = "center", config = {"closeOnEscape" : True})
