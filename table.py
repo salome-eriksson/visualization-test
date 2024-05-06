@@ -181,6 +181,8 @@ class Tablereport(Report):
                     continue
                 indices += [(a,d,p) for p in self.experiment_data.problems[d]]
         indices.sort()
+        max_length = max([len(x) for x in df.loc[indices]['Index']])
+        self.view.widths = {'Index': 10+max_length*7}
         return df.loc[indices]
 
 
