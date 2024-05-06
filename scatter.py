@@ -87,6 +87,11 @@ class Scatterplot(Report):
                   and has legend entry "alg1 vs alg2"
                 - "alg1 alg2 x" will use alg1 on the x and alg2 on the y axis, 
                   and has legend entry "x"
+                - "\*x\* \*y\*" will search for all algorithm pairs whose name
+                  only differs in that the first algorithm contains "x" and the
+                  second contains "y". For example "\*base\* \*v1\*" would allow
+                  you to easily compare the base and v1 versions of all
+                  algorithms.
                 
                 If "Autoscale" is deactivated, you can specify the x and y 
                 ranges of the plot yourself; otherwise it will be computed 
@@ -138,6 +143,14 @@ class Scatterplot(Report):
                 xalg = yalg = name = new_entry[0]
             else:
                 continue
+            if xalg[0] == xalg[-1] == yalg[0] == yalg[-1] == '*':
+                x_substring = xalg[1:-1]
+                y_substring = yalg[1:-1]
+                for alg in self.experiment_data.algorithms:
+                    if x_substring in alg:
+                        for alg2 in self.experiment_data.algorithms:
+                            if y_substring in alg2 and alg.replace(x_substring, "") == alg2.replace(y_substring, ""):
+                                entries.append((alg, alg2, f"{alg} vs {alg2}"))
             invalid_algorithms = [alg for alg in [xalg,yalg] if alg not in self.experiment_data.algorithms]
             if not invalid_algorithms:
                 entries.append((xalg,yalg,name))
