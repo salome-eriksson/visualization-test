@@ -219,12 +219,18 @@ class Scatterplot(Report):
         xmin = overall_frame[xcol].min()
         ymax = overall_frame[ycol].max()
         ymin = overall_frame[ycol].min()
+        if (self.xattribute == self.yattribute and not self.relative):
+            xmax = max(xmax, ymax)
+            ymax = xmax
+            xmin = min(xmin, ymin)
+            ymin = xmin
 
         # Compute failed values.
         x_failed = int(10 ** math.ceil(math.log10(xmax))) if self.xscale == "log" else xmax*1.1
         y_failed = int(10 ** math.ceil(math.log10(ymax))) if self.yscale == "log" else ymax*1.1
         overall_frame[xcol].replace(np.nan,x_failed, inplace=True)
         overall_frame[ycol].replace(np.nan,y_failed, inplace=True)
+        overall_frame['yrel'].replace(np.nan,y_failed, inplace=True)
         
         # Compute ranges if they are not specified.
         if self.autoscale:
