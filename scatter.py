@@ -185,8 +185,6 @@ class Scatterplot(Report):
             return
 
         self.data_view_in_progress = True
-        xlabel = self.xattribute
-        ylabel = self.yattribute
 
         # Build the DataFrame used in the plot.
         frames = []
@@ -213,7 +211,20 @@ class Scatterplot(Report):
         if overall_frame.empty:
             self.data_view_in_progress = False
             return pn.pane.Markdown("All points have been dropped")
-
+        
+        # Define axis labels
+        tmp = overall_frame.replace(np.nan, np.Infinity)
+        num_x_lower = (tmp['x'] < tmp['y']).value_counts()[True]
+        num_y_lower = (tmp['y'] < tmp['x']).value_counts()[True]
+        x_failed_table = (tmp['x'] == np.Infinity)
+        y_failed_table = (tmp['y'] == np.Infinity)
+        num_x_failed = x_failed_table.value_counts()[True]
+        num_y_failed = y_failed_table.value_counts()[True]
+        num_x_failed_single = (x_failed_table & ~y_failed_table).value_counts()[True]
+        num_y_failed_single = (y_failed_table & ~x_failed_table).value_counts()[True]
+        xlabel = self.xattribute + f" (lower: {num_x_lower}, failed: {num_x_failed}, failed single: {num_x_failed_single})"
+        ylabel = self.yattribute + f" (lower: {num_y_lower}, failed: {num_y_failed}, failed single: {num_y_failed_single})"
+        
         # Compute min and max values.
         xmax = overall_frame[xcol].max()
         xmin = overall_frame[xcol].min()
@@ -237,7 +248,6 @@ class Scatterplot(Report):
               "x_range" : (xmin*0.9, x_failed*1.1),
               "y_range" : (ymin*0.9, y_failed*1.1)
             })
-        
         
         indices = []
         if self.groupby == "name":
@@ -264,6 +274,14 @@ class Scatterplot(Report):
                       x_axis_label=xlabel, y_axis_label = ylabel,
                       x_axis_type = self.xscale, y_axis_type = self.yscale,
                       x_range = self.x_range, y_range = self.y_range)
+
+        # helper lines
+        plot.renderers.extend([Span(location=x_failed, dimension='height', line_color='red')])
+        plot.renderers.extend([Span(location=y_failed, dimension='width', line_color='red')])
+        min_point = min(self.x_range[0],self.y_range[0])
+        max_point = max(self.x_range[1],self.y_range[1])
+        plot.line(x=[min_point, max_point], y=[1,1] if self.relative else [min_point, max_point], color='black')
+        
         legend_items = []
         for i, index in enumerate(indices):
             df = overall_frame.loc[[index]].reset_index()
@@ -272,14 +290,8 @@ class Scatterplot(Report):
                 fill_color=self.colors[i%len(COLORS)], fill_alpha=self.marker_fill_alpha, 
                 size=self.marker_size, muted_fill_alpha = min(0.1,self.marker_fill_alpha))
             p.data_source.selected.on_change('indices', partial(self.on_click_callback, df=df))
-            legend_items.append(LegendItem(label=index, renderers = [plot.renderers[i]]))
+            legend_items.append(LegendItem(label=index, renderers = [plot.renderers[i+3]]))
         
-        # helper lines
-        plot.renderers.extend([Span(location=x_failed, dimension='height', line_color='red')])
-        plot.renderers.extend([Span(location=y_failed, dimension='width', line_color='red')])
-        min_point = min(self.x_range[0],self.y_range[0])
-        max_point = max(self.x_range[1],self.y_range[1])
-        plot.line(x=[min_point, max_point], y=[1,1] if self.relative else [min_point, max_point], color='black')
         
         # legend
         legend = Legend(items = legend_items)
@@ -287,6 +299,7 @@ class Scatterplot(Report):
         plot.add_layout(legend, 'below')
         plot.legend.ncols = ncols
         
+        # hover info
         plot.add_tools(HoverTool(tooltips=[
             ('Domain', '@domain'),
             ('Problem', '@problem'),
