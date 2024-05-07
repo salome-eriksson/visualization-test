@@ -197,18 +197,18 @@ class Scatterplot(Report):
             algs = [xalg] if xalg == yalg else [xalg, yalg]
             new_frame = pd.DataFrame({'x':xcol, 'y':ycol, 'yrel': ycol, 'name':name, 'algs': [algs]*len(xcol)}).reset_index().set_index(index_order)
             frames.append(new_frame)
-        overall_frame = pd.concat(frames).dropna(how='all')
+        overall_frame = pd.concat(frames)
         overall_frame.replace(0, self.replace_zero, inplace=True)
         overall_frame.sort_index(level=0, inplace=True)
-        xcol = 'x'
-        ycol = 'y' if not self.relative else 'yrel'
         overall_frame['yrel'] = overall_frame.y.div(overall_frame.x)
         overall_frame.loc[~np.isfinite(overall_frame['yrel'].astype(float)), 'yrel'] = np.nan
+        xcol = 'x'
+        ycol = 'y' if not self.relative else 'yrel'
 
         if self.xscale == "log":
-            overall_frame = overall_frame[overall_frame[xcol] > 0]
+            overall_frame = overall_frame[~(overall_frame[xcol] <= 0)]
         if self.yscale == "log":
-            overall_frame = overall_frame[overall_frame[ycol] > 0]
+            overall_frame = overall_frame[~(overall_frame[ycol] <= 0)]
 
         if overall_frame.empty:
             self.data_view_in_progress = False
@@ -230,7 +230,6 @@ class Scatterplot(Report):
         y_failed = int(10 ** math.ceil(math.log10(ymax))) if self.yscale == "log" else ymax*1.1
         overall_frame[xcol].replace(np.nan,x_failed, inplace=True)
         overall_frame[ycol].replace(np.nan,y_failed, inplace=True)
-        overall_frame['yrel'].replace(np.nan,y_failed, inplace=True)
         
         # Compute ranges if they are not specified.
         if self.autoscale:
