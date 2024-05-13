@@ -44,8 +44,10 @@ class ExperimentData():
             self.data = self.data.sort_index()
             # build a dicitonary that stores for every domain a list of problem names
             self.problems = dict()
+            self.num_problems = 0
             for domain in self.domains:
                 self.problems[domain] = [x for x in self.data.loc[(self.attributes[0],domain)].index.get_level_values('problem')]
+                self.num_problems  += len(self.problems[domain])
 
             self.compute_ipc_score()
             

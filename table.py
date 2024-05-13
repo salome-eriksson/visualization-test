@@ -249,24 +249,26 @@ class Tablereport(Report):
             if not columns_outdated and not domains_outdated and aggregator == self.computed[attribute]["aggregator"]:
                 continue
 
-            self.table_data.loc[(attribute, "--", "--"),"Index"] = f"{attribute} ({aggregator})"
             
             # Compute the overall aggregate.
-            new_vals = None
             attribute_data = None
+            index_string = f"{attribute} ({aggregator}, "
+            num_problems = 0
             if attribute not in self.exp_data_dropna.index:
                 new_aggregates = np.NaN
             else:
                 attribute_data = self.exp_data_dropna.loc[attribute]
                 attribute_data = attribute_data.loc[attribute_data.index.get_level_values('domain').isin(self.domains)]
                 attribute_data = attribute_data.apply(pd.to_numeric, errors='coerce')
+                num_problems = len(attribute_data.index)
                 # Since gmean is not a built-in function we need to set the variable to the actual function here.
                 if aggregator == "gmean":
                     aggregator = stats.gmean
                     attribute_data = attribute_data.replace(0,0.000001)
                 new_aggregates = attribute_data.agg(aggregator)
             self.table_data.loc[(attribute, "--", "--"),cols_without_index] = new_aggregates
-            
+
+            self.table_data.loc[(attribute, "--", "--"),"Index"] = index_string + f"{num_problems}/{self.experiment_data.num_problems})"
             
             self.computed[attribute]["domains_outdated"] = True
             if attribute in self.unfolded:
@@ -292,6 +294,11 @@ class Tablereport(Report):
         # Clear the slice and apply combine_first (this way, the newly aggregated data is taken wherever it exists).
         self.table_data.loc[rows,cols] = np.NaN
         self.table_data.loc[rows,cols] = self.table_data.loc[rows,cols].combine_first(attribute_data.groupby(level=0).agg(aggregator))
+        
+        for domain in self.experiment_data.domains:
+            num_problems = len(self.experiment_data.problems[domain])
+            num_aggregated = 0 if domain not in attribute_data.index.get_level_values(0) else len(attribute_data.loc[domain].index)
+            self.table_data.loc[(attribute, domain, "--"),'Index'] = f"{domain} ({num_aggregated}/{num_problems})"
         
         self.computed[attribute]["domains_outdated"] = False
 
