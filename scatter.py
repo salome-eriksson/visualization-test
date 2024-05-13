@@ -26,6 +26,13 @@ COLORS = ["black", "red", "blue", "teal", "orange",
           "purple", "olive", "lime", "cyan"]
 
 
+def get_num_true(df):
+    vc = df.value_counts()
+    if True not in vc.index:
+        return 0
+    else:
+        return vc[True]
+
         
 
 
@@ -174,8 +181,7 @@ class Scatterplot(Report):
             
     def deactivate(self):
         self.problemreports.clear()
-        self.placeholder.clear()
-        
+        self.placeholder.clear()        
         
     def data_view(self):
         if self.data_view_in_progress:
@@ -214,14 +220,14 @@ class Scatterplot(Report):
         
         # Define axis labels
         tmp = overall_frame.replace(np.nan, np.Infinity)
-        num_x_lower = (tmp['x'] < tmp['y']).value_counts()[True]
-        num_y_lower = (tmp['y'] < tmp['x']).value_counts()[True]
+        num_x_lower = get_num_true(tmp['x'] < tmp['y'])
+        num_y_lower = get_num_true(tmp['y'] < tmp['x'])
         x_failed_table = (tmp['x'] == np.Infinity)
         y_failed_table = (tmp['y'] == np.Infinity)
-        num_x_failed = x_failed_table.value_counts()[True]
-        num_y_failed = y_failed_table.value_counts()[True]
-        num_x_failed_single = (x_failed_table & ~y_failed_table).value_counts()[True]
-        num_y_failed_single = (y_failed_table & ~x_failed_table).value_counts()[True]
+        num_x_failed = get_num_true(x_failed_table)
+        num_y_failed = get_num_true(y_failed_table)
+        num_x_failed_single = get_num_true(x_failed_table & ~y_failed_table)
+        num_y_failed_single = get_num_true(y_failed_table & ~x_failed_table)
         xlabel = self.xattribute + f" (lower: {num_x_lower}, failed: {num_x_failed}, failed single: {num_x_failed_single})"
         ylabel = self.yattribute + f" (lower: {num_y_lower}, failed: {num_y_failed}, failed single: {num_y_failed_single})"
         
