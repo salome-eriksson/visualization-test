@@ -158,9 +158,9 @@ class Tablereport(Report):
         # Give aggregates a different background color, and indent Index col text if it's a domain or problem.
         style = [""] * len(row)
         if row.name[1] == "--":
-            style = [x + "background-color: #c1c1c1;" for x in style]
+            style = [x + "font-weight: bold; background-color: #C1C1C180;" for x in style]
         elif row.name[2] == "--":
-            style = [x + "background-color: #e1e1e1;" for x in style]
+            style = [x + "font-weight: bold; background-color: #E1E1E180;" for x in style]
             style[0] = style[0] + "text-indent:25px;"
         else:
             style[0] = "text-indent:50px;"
