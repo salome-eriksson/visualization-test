@@ -2,6 +2,46 @@ import json
 import numpy as np
 import pandas as pd
 
+class Attribute():
+    def __init__(self, name, min_wins, aggregator):
+        self.name = name
+        self.min_wins = min_wins
+        self.aggregator = aggregator
+        
+    def __str__(self):
+        return f"{self.name} (min {'wins' if self.min_wins else 'loses' }, {self.aggregator} aggregator)"
+
+
+ATTRIBUTES = {
+  "cost" :    Attribute("cost", True, "sum"),
+  "coverage" : Attribute("coverage", False, "sum"),
+  "dead_ends" : Attribute("dead_ends", False, "sum"),
+  "evaluated" : Attribute("evaluated", True, "gmean"),
+  "evaluations" : Attribute("evaluations", True, "gmean"),
+  "evaluations_until_last_jump" : Attribute("evaluations_until_last_jump", True, "gmean"),
+  "expansions" : Attribute("expansions", True, "gmean"),
+  "expansions_until_last_jump" : Attribute("expansions_until_last_jump", True, "gmean"),
+  "generated" : Attribute("generated", True, "gmean"),
+  "generated_until_last_jump" : Attribute("generated_until_last_jump", True, "gmean"),
+  "initial_h_value" : Attribute("initial_h_value", False, "sum"),
+  "ipc-sat-score" : Attribute("ipc-sat-score", False, "sum"),
+  "ipc-sat-score-no-planning-domains" : Attribute("ipc-sat-score-no-planning-domains", False, "sum"),
+  "memory" : Attribute("memory", True, "sum"),
+  "plan_length" : Attribute("plan_length", True, "sum"),
+  "planner_memory" : Attribute("planner_memory", True, "sum"),
+  "planner_time" : Attribute("planner_time", True, "gmean"),
+  "planner_wall_clock_time" : Attribute("planner_wall_clock_time", True, "gmean"),
+  "raw_memory" : Attribute("raw_memory", True, "sum"),
+  "score_evaluations" : Attribute("score_evaluations", False, "sum"),
+  "score_expansions" : Attribute("score_expansions", False, "sum"),
+  "score_generated" : Attribute("score_generated", False, "sum"),
+  "score_memory" : Attribute("score_memory", False, "sum"),
+  "score_search_time" : Attribute("score_search_time", False, "sum"),
+  "score_total_time" : Attribute("score_total_time", False, "sum"),
+  "search_time" : Attribute("search_time", True, "gmean"),
+  "total_time" : Attribute("total_time", True, "gmean"),
+  "translator_time_done" : Attribute("translator_time_done", True, "gmean")
+}
 
 class ExperimentData():
     def compute_ipc_score(self):
@@ -25,6 +65,10 @@ class ExperimentData():
         self.attributes = sorted(self.attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
         self.numeric_attributes = sorted(self.numeric_attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
         self.data = self.data.sort_values("attribute")
+        self.attribute_info = ATTRIBUTES.copy()
+        for attribute in self.numeric_attributes:
+            if attribute not in self.attribute_info:
+              self.attribute_info[attribute] = Attribute(attribute, False, "sum")
   
     def __init__(self, properties_file=""):
         try:

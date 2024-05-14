@@ -17,68 +17,7 @@ from problemtable import ProblemTablereport
 # TODO: is replacing 0 with something like 0.0001 a valid approach for gmean?
 # TODO: fix warnings for gmean
 
-class Tablereport(Report):    
-    DEFAULT_MIN_WINS = defaultdict(lambda:None,{
-        "cost" : True,
-        "coverage": False,
-        "dead_ends": False,
-        "evaluated": True,
-        "evaluations": True,
-        "evaluations_until_last_jump": True,
-        "expansions": True,
-        "expansions_until_last_jump": True,
-        "generated": True,
-        "generated_until_last_jump": True,
-        "initial_h_value": False,
-        "ipc-sat-score": False,
-        "ipc-sat-score-no-planning-domains": False,
-        "memory": True,
-        "plan_length": False,
-        "planner_memory": True,
-        "planner_time": True,
-        "planner_wall_clock_time": True,
-        "raw_memory": True,
-        "score_evaluations": False,
-        "score_expansions": False,
-        "score_generated": False,
-        "score_memory": False,
-        "score_search_time": False,
-        "score_total_time": False,
-        "search_time": True,
-        "total_time": True,
-        "translator_time_done": True
-    })
-    
-    DEFAULT_AGGREGATORS = defaultdict(lambda:"sum",{
-        "cost" : "sum",
-        "coverage": "sum",
-        "evaulated": "gmean",
-        "evaluations": "gmean",
-        "evaluations_until_last_jump": "gmean",
-        "expansions": "gmean",
-        "expansions_until_last_jump": "gmean",
-        "generated": "gmean",
-        "generated_until_last_jump": "gmean",
-        # TODO: do we need finite sum?
-        "initial_h_value": "sum",
-        "ipc-sat-score": "sum",
-        "ipc-sat-score-no-planning-domains": "sum",
-        "memory": "sum",
-        "planner_memory": "sum",
-        "planner_time": "gmean",
-        "planner_wall_clock_time": "gmean",
-        "raw_memory": "sum",
-        "score_evaluations": "sum",
-        "score_expansions": "sum",
-        "score_generated": "sum",
-        "score_memory": "sum",
-        "score_search_time": "sum",
-        "score_total_time": "sum",
-        "search_time": "gmean",
-        "total_time": "gmean",
-        "translator_time_done": "gmean"
-    })
-
+class Tablereport(Report):
     attributes = param.ListSelector()
     domains = param.ListSelector()
     custom_min_wins = param.Dict(default={})
@@ -103,7 +42,6 @@ class Tablereport(Report):
         # ~ self.param_view = pn.Param(self.param,  widgets= {"attributes": {"type": pn.widgets.CrossSelector, "definition_order" : False, "width" : 500}})
 
         # ajaxLoader false is set to reduce blinking (https://github.com/olifolkerd/tabulator/issues/1027)
-        # TODO: reenable sorting (fix custom sorting functions that can handle NaN)
         self.view = pn.widgets.Tabulator(value=self.view_data, disabled = True, show_index = False, 
                                     pagination="remote", page_size=10000, frozen_columns=['Index'], 
                                     sizing_mode='stretch_both', configuration={"ajaxLoader":"False"}, sortable=False)
@@ -155,7 +93,7 @@ class Tablereport(Report):
 
 
     def style_table_by_row(self, row):
-        # Give aggregates a different background color, and indent Index col text if it's a domain or problem.
+        # Give aggregates a different style, and indent Index col text if it's a domain or problem.
         style = [""] * len(row)
         if row.name[1] == "--":
             style = [x + "font-weight: bold; background-color: #C1C1C180;" for x in style]
@@ -194,7 +132,8 @@ class Tablereport(Report):
         if problem != "--":
             self.problemreports.append(ProblemTablereport(
                 experiment_data = self.experiment_data, sizing_mode = "stretch_width",
-                domain = domain, problem = problem, algorithms = self.get_current_columns()))
+                domain = domain, problem = problem, algorithms = self.get_current_columns(), 
+                custom_min_wins = self.custom_min_wins))
             floatpanel = pn.layout.FloatPanel(
                 self.problemreports[-1].data_view, name = f"{domain} - {problem}", contained = False, 
                 height = 750, width = 750, position = "center", config = {"closeOnEscape" : True})
@@ -245,7 +184,9 @@ class Tablereport(Report):
       
         cols_without_index = self.table_data.columns[1:]
         for attribute in self.experiment_data.numeric_attributes:
-            aggregator = self.custom_aggregators[attribute] if attribute in self.custom_aggregators else self.DEFAULT_AGGREGATORS[attribute]
+            aggregator = (self.custom_aggregators[attribute] 
+                if attribute in self.custom_aggregators 
+                else self.experiment_data.attribute_info[attribute].aggregator)
             if not columns_outdated and not domains_outdated and aggregator == self.computed[attribute]["aggregator"]:
                 continue
 
@@ -285,7 +226,9 @@ class Tablereport(Report):
 
         if attribute_data is None:
             attribute_data = self.exp_data_dropna.loc[attribute].apply(pd.to_numeric, errors='coerce')
-        aggregator = self.custom_aggregators[attribute] if attribute in self.custom_aggregators else self.DEFAULT_AGGREGATORS[attribute]
+        aggregator = (self.custom_aggregators[attribute] 
+            if attribute in self.custom_aggregators 
+            else self.experiment_data.attribute_info[attribute].aggregator)
         # Since gmean is not a built-in function we need to set the variable to the actual function here.
         if aggregator == "gmean":
                 aggregator = stats.gmean

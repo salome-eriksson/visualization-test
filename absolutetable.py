@@ -68,7 +68,11 @@ class AbsoluteTablereport(Tablereport):
     def style_table_by_row(self, row):
         style = super().style_table_by_row(row)
         attribute = row.name[0]
-        min_wins = self.custom_min_wins[attribute] if attribute in self.custom_min_wins else self.DEFAULT_MIN_WINS[attribute]
+        min_wins = None
+        if attribute in self.custom_min_wins:
+            min_wins = self.custom_min_wins[attribute] 
+        elif attribute in self.experiment_data.attribute_info:
+            min_wins = self.experiment_data.attribute_info[attribute].min_wins
 
         if min_wins is None:
             return style

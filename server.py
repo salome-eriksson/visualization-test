@@ -60,7 +60,7 @@ class ReportViewer(param.Parameterized):
              "algorithm1", "algorithm2", "percentual", "precision"])
         self.reports["Problem Report"].param.watch(
             self.update_param_config,
-            ["domain", "problem", "algorithms"])
+            ["domain", "problem", "algorithms", "custom_min_wins"])
         self.reports["Scatter Plot"].param.watch(
             self.update_param_config,
             ["xattribute", "yattribute", "entries_list", "relative",
