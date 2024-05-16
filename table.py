@@ -38,13 +38,28 @@ class Tablereport(Report):
         # TODO: fix with proper initialization order such that we don't have invalid between param combinations
         super().__init__(**params)
 
+        stylesheet = """
+            .tabulator-row.tabulator-selected .tabulator-cell{
+                background-color: #9abcea !important;
+            }
+
+            .tabulator-row:hover {
+                background-color: #bbbbbb !important;
+            }
+
+            .tabulator .tabulator-row.tabulator-selectable:hover .tabulator-cell{
+                background-color: #769bcc !important;
+            }
+        """
+
         # TODO: currently added to absolutetable.py, figure out how to add it here and use in subclasses.
         # ~ self.param_view = pn.Param(self.param,  widgets= {"attributes": {"type": pn.widgets.CrossSelector, "definition_order" : False, "width" : 500}})
 
         # ajaxLoader false is set to reduce blinking (https://github.com/olifolkerd/tabulator/issues/1027)
         self.view = pn.widgets.Tabulator(value=self.view_data, disabled = True, show_index = False, 
                                     pagination="remote", page_size=10000, frozen_columns=['Index'], 
-                                    sizing_mode='stretch_both', configuration={"ajaxLoader":"False"}, sortable=False)
+                                    sizing_mode='stretch_both', configuration={"ajaxLoader":"False"},
+                                    sortable=False, stylesheets=[stylesheet])
         self.view.add_filter(pn.bind(self.filter, dummy=self.dummy))
         self.view.style.apply(func=self.style_table_by_row, axis=1)
         self.view.on_click(self.on_click_callback)
