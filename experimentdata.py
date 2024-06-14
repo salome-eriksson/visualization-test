@@ -3,44 +3,55 @@ import numpy as np
 import pandas as pd
 
 class Attribute():
-    def __init__(self, name, min_wins, aggregator):
+    def __init__(self, name, default_min_wins = None, default_aggregator = None):
         self.name = name
+        self.min_wins = self.default_min_wins =  default_min_wins
+        self.aggregator = self.default_aggregator = default_aggregator
+
+    def set_min_wins(self, min_wins):
         self.min_wins = min_wins
+        
+    def reset_min_wins(self):
+        self.min_wins = self.default_min_wins
+
+    def set_aggregator(self, aggregator):
         self.aggregator = aggregator
+
+    def reset_aggregator(self):
+        self.aggregator = self.default_aggregator
         
     def __str__(self):
         return f"{self.name} (min {'wins' if self.min_wins else 'loses' }, {self.aggregator} aggregator)"
 
-
-ATTRIBUTES = {
-  "cost" :    Attribute("cost", True, "sum"),
-  "coverage" : Attribute("coverage", False, "sum"),
-  "dead_ends" : Attribute("dead_ends", False, "sum"),
-  "evaluated" : Attribute("evaluated", True, "gmean"),
-  "evaluations" : Attribute("evaluations", True, "gmean"),
-  "evaluations_until_last_jump" : Attribute("evaluations_until_last_jump", True, "gmean"),
-  "expansions" : Attribute("expansions", True, "gmean"),
-  "expansions_until_last_jump" : Attribute("expansions_until_last_jump", True, "gmean"),
-  "generated" : Attribute("generated", True, "gmean"),
-  "generated_until_last_jump" : Attribute("generated_until_last_jump", True, "gmean"),
-  "initial_h_value" : Attribute("initial_h_value", False, "sum"),
-  "ipc-sat-score" : Attribute("ipc-sat-score", False, "sum"),
-  "ipc-sat-score-no-planning-domains" : Attribute("ipc-sat-score-no-planning-domains", False, "sum"),
-  "memory" : Attribute("memory", True, "sum"),
-  "plan_length" : Attribute("plan_length", True, "sum"),
-  "planner_memory" : Attribute("planner_memory", True, "sum"),
-  "planner_time" : Attribute("planner_time", True, "gmean"),
-  "planner_wall_clock_time" : Attribute("planner_wall_clock_time", True, "gmean"),
-  "raw_memory" : Attribute("raw_memory", True, "sum"),
-  "score_evaluations" : Attribute("score_evaluations", False, "sum"),
-  "score_expansions" : Attribute("score_expansions", False, "sum"),
-  "score_generated" : Attribute("score_generated", False, "sum"),
-  "score_memory" : Attribute("score_memory", False, "sum"),
-  "score_search_time" : Attribute("score_search_time", False, "sum"),
-  "score_total_time" : Attribute("score_total_time", False, "sum"),
-  "search_time" : Attribute("search_time", True, "gmean"),
-  "total_time" : Attribute("total_time", True, "gmean"),
-  "translator_time_done" : Attribute("translator_time_done", True, "gmean")
+PREDEFINED_ATTRIBUTES = {
+  "cost" : (True, "sum"),
+  "coverage" : (False, "sum"),
+  "dead_ends" : (False, "sum"),
+  "evaluated" : (True, "gmean"),
+  "evaluations" : (True, "gmean"),
+  "evaluations_until_last_jump" : (True, "gmean"),
+  "expansions" : (True, "gmean"),
+  "expansions_until_last_jump" : (True, "gmean"),
+  "generated" : (True, "gmean"),
+  "generated_until_last_jump" : (True, "gmean"),
+  "initial_h_value" : (False, "sum"),
+  "ipc-sat-score" : (False, "sum"),
+  "ipc-sat-score-no-planning-domains" : (False, "sum"),
+  "memory" : (True, "sum"),
+  "plan_length" : (True, "sum"),
+  "planner_memory" : (True, "sum"),
+  "planner_time" : (True, "gmean"),
+  "planner_wall_clock_time" : (True, "gmean"),
+  "raw_memory" : (True, "sum"),
+  "score_evaluations" : (False, "sum"),
+  "score_expansions" : (False, "sum"),
+  "score_generated" : (False, "sum"),
+  "score_memory" : (False, "sum"),
+  "score_search_time" : (False, "sum"),
+  "score_total_time" : (False, "sum"),
+  "search_time" : (True, "gmean"),
+  "total_time" : (True, "gmean"),
+  "translator_time_done" : (True, "gmean")
 }
 
 class ExperimentData():
@@ -65,10 +76,6 @@ class ExperimentData():
         self.attributes = sorted(self.attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
         self.numeric_attributes = sorted(self.numeric_attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
         self.data = self.data.sort_values("attribute")
-        self.attribute_info = ATTRIBUTES.copy()
-        for attribute in self.numeric_attributes:
-            if attribute not in self.attribute_info:
-              self.attribute_info[attribute] = Attribute(attribute, False, "sum")
   
     def __init__(self, properties_file=""):
         try:
@@ -94,6 +101,20 @@ class ExperimentData():
                 self.num_problems  += len(self.problems[domain])
 
             self.compute_ipc_score()
+
+            # generate Attribute classes for each attribute
+            self.attribute_info = dict()
+            for attribute in self.attributes:
+                a = None
+                if attribute in PREDEFINED_ATTRIBUTES:
+                    a = Attribute(attribute, PREDEFINED_ATTRIBUTES[attribute][0], PREDEFINED_ATTRIBUTES[attribute][1])
+                elif attribute in self.numeric_attributes:
+                    min_wins = True if "memory" in attribute or "time" in attribute else False
+                    a = Attribute(attribute, min_wins, "sum")
+                else:
+                    a = Attribute(attribute, None, None)
+                assert(a)
+                self.attribute_info[attribute] = a
             
         except Exception as ex:
             self.algorithms = []
@@ -102,3 +123,16 @@ class ExperimentData():
             self.attributes = []
             self.numeric_attributes = []
             self.data = pd.DataFrame(index= pd.MultiIndex.from_tuples([],names = ["attribute","domain","problem"]))
+
+
+    def set_attribute_customizations(self, min_wins, aggregators):
+        for name, a in self.attribute_info.items():
+            if name not in min_wins.keys():
+                a.reset_min_wins()
+            else:
+                a.set_min_wins(min_wins[name])
+                
+            if a.name not in aggregators.keys():
+                a.reset_aggregator()
+            else:
+                a.set_aggregator(aggregators[name])

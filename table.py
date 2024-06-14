@@ -20,8 +20,6 @@ from problemtable import ProblemTablereport
 class Tablereport(Report):
     attributes = param.ListSelector()
     domains = param.ListSelector()
-    custom_min_wins = param.Dict(default={})
-    custom_aggregators = param.Dict(default={})
     precision = param.Integer(default=3)
     
     
@@ -83,8 +81,6 @@ class Tablereport(Report):
         self.param.domains.default = self.experiment_data.domains
         param_updates["attributes"] =  self.experiment_data.attributes
         param_updates["domains"] = self.experiment_data.domains
-        param_updates["custom_min_wins"] = dict()
-        param_updates["custom_aggregators"] = dict()
         
         # Build the rows for the aggregated values such that we later just overwrite values rather than concatenate.
         mi = pd.MultiIndex.from_product([self.experiment_data.attributes, ["--", *self.experiment_data.domains], ["--"]],
@@ -147,8 +143,7 @@ class Tablereport(Report):
         if problem != "--":
             self.problemreports.append(ProblemTablereport(
                 experiment_data = self.experiment_data, sizing_mode = "stretch_width",
-                domain = domain, problem = problem, algorithms = self.get_current_columns(), 
-                custom_min_wins = self.custom_min_wins))
+                domain = domain, problem = problem, algorithms = self.get_current_columns()))
             floatpanel = pn.layout.FloatPanel(
                 self.problemreports[-1].data_view, name = f"{domain} - {problem}", contained = False, 
                 height = 750, width = 750, position = "center", config = {"closeOnEscape" : True})
@@ -199,9 +194,7 @@ class Tablereport(Report):
       
         cols_without_index = self.table_data.columns[1:]
         for attribute in self.experiment_data.numeric_attributes:
-            aggregator = (self.custom_aggregators[attribute] 
-                if attribute in self.custom_aggregators 
-                else self.experiment_data.attribute_info[attribute].aggregator)
+            aggregator = self.experiment_data.attribute_info[attribute].aggregator
             if not columns_outdated and not domains_outdated and aggregator == self.computed[attribute]["aggregator"]:
                 continue
 
@@ -241,9 +234,7 @@ class Tablereport(Report):
 
         if attribute_data is None:
             attribute_data = self.exp_data_dropna.loc[attribute].apply(pd.to_numeric, errors='coerce')
-        aggregator = (self.custom_aggregators[attribute] 
-            if attribute in self.custom_aggregators 
-            else self.experiment_data.attribute_info[attribute].aggregator)
+        aggregator = self.experiment_data.attribute_info[attribute].aggregator
         # Since gmean is not a built-in function we need to set the variable to the actual function here.
         if aggregator == "gmean":
                 aggregator = stats.gmean

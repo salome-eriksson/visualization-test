@@ -21,8 +21,6 @@ class AbsoluteTablereport(Tablereport):
             pn.widgets.CrossSelector.from_param(self.param.domains, definition_order = False, width = 475, styles={'padding-left': '10px'}),
             pn.pane.HTML("Algorithms", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
             pn.widgets.CrossSelector.from_param(self.param.algorithms, definition_order = False, width = 475, styles={'padding-left': '10px'}),
-            pn.Param(self.param.custom_min_wins),
-            pn.Param(self.param.custom_aggregators),
             pn.Param(self.param.precision),
             pn.pane.Markdown("""
                 ### Information
@@ -68,11 +66,7 @@ class AbsoluteTablereport(Tablereport):
     def style_table_by_row(self, row):
         style = super().style_table_by_row(row)
         attribute = row.name[0]
-        min_wins = None
-        if attribute in self.custom_min_wins:
-            min_wins = self.custom_min_wins[attribute] 
-        elif attribute in self.experiment_data.attribute_info:
-            min_wins = self.experiment_data.attribute_info[attribute].min_wins
+        min_wins = self.experiment_data.attribute_info[attribute].min_wins
 
         if min_wins is None:
             return style

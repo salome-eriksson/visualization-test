@@ -21,6 +21,8 @@ pn.extension('floatpanel')
 class ReportViewer(param.Parameterized):
     reportType = param.Selector()
     properties_file = param.String(default="")
+    custom_min_wins = param.Dict(default={})
+    custom_aggregators = param.Dict(default={})
     param_config = param.String(precedence=-1)
 
     def __init__(self, **params):
@@ -50,17 +52,19 @@ class ReportViewer(param.Parameterized):
             set_from_param_config()
         
         #register callback for creating config string for url
-        self.param.watch(self.update_param_config, ["properties_file", "reportType"])
+        self.param.watch(self.update_param_config,
+            ["properties_file", "reportType", "custom_min_wins",
+             "custom_aggregators"])
         self.reports["Absolute Report"].param.watch(
             self.update_param_config,
-            ["attributes", "domains", "custom_min_wins", "custom_aggregators", "algorithms", "precision"])
+            ["attributes", "domains", "algorithms", "precision"])
         self.reports["Diff Report"].param.watch(
             self.update_param_config,
-            ["attributes", "domains", "custom_min_wins", "custom_aggregators", 
-             "algorithm1", "algorithm2", "percentual", "precision"])
+            ["attributes", "domains", "algorithm1", "algorithm2", "percentual",
+             "precision"])
         self.reports["Problem Report"].param.watch(
             self.update_param_config,
-            ["domain", "problem", "algorithms", "custom_min_wins"])
+            ["domain", "problem", "algorithms"])
         self.reports["Scatter Plot"].param.watch(
             self.update_param_config,
             ["xattribute", "yattribute", "entries_list", "relative",
@@ -74,6 +78,13 @@ class ReportViewer(param.Parameterized):
         self.experiment_data = ExperimentData(self.properties_file)
         for r in self.reports.values():
             r.update_experiment_data(self.experiment_data)
+
+    @param.depends('custom_min_wins', 'custom_aggregators', watch=True)
+    def update_attributes(self):
+        self.experiment_data.set_attribute_customizations(
+            self.custom_min_wins, self.custom_aggregators)
+        for r in self.reports.values():
+            r.data_view()
 
 
     def view(self):
@@ -92,6 +103,8 @@ class ReportViewer(param.Parameterized):
             params["properties_file"] = self.properties_file
         params["reportType"] = sorted(self.reports.keys()).index(self.reportType)
         params["version"] = "1.0"
+        params["custom_min_wins"] = self.custom_min_wins
+        params["custom_aggregators"] = self.custom_aggregators
         self.param_config = base64.urlsafe_b64encode(zlib.compress(json.dumps(params).encode())).decode()
         self.setting_param_config = False
 
@@ -106,6 +119,8 @@ class ReportViewer(param.Parameterized):
             self.param.update({
                 "properties_file": params.pop("properties_file"),
                 "reportType": sorted(self.reports.keys())[int(params.pop("reportType"))],
+                "custom_min_wins": params.pop("custom_min_wins"),
+                "custom_aggregators": params.pop("custom_aggregators"),
             })
             assert(params.pop("version") == "1.0")
             self.reports[self.reportType].set_params_from_dict(params)

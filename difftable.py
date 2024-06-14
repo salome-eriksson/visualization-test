@@ -25,8 +25,6 @@ class DiffTablereport(Tablereport):
             pn.widgets.CrossSelector.from_param(self.param.domains, definition_order = False, width = 475, styles={'padding-left': '10px'}),
             pn.Param(self.param.algorithm1),
             pn.Param(self.param.algorithm2),
-            pn.Param(self.param.custom_min_wins),
-            pn.Param(self.param.custom_aggregators),
             pn.Param(self.param.percentual),
             pn.Param(self.param.precision),
             pn.pane.Markdown("""
@@ -77,7 +75,7 @@ class DiffTablereport(Tablereport):
             retdata["Diff"] = (col2_numeric / col1_numeric)-1
         else:
             retdata["Diff"] = col2_numeric - col1_numeric
-        return retdata       
+        return retdata
 
     def get_current_columns(self):
         if self.algorithm1 != "--" and self.algorithm2 != "--":
@@ -89,11 +87,7 @@ class DiffTablereport(Tablereport):
     def style_table_by_row(self, row):
         style = super().style_table_by_row(row)
         attribute = row.name[0]
-        min_wins = None
-        if attribute in self.custom_min_wins:
-            min_wins = self.custom_min_wins[attribute] 
-        elif attribute in self.experiment_data.attribute_info:
-            min_wins = self.experiment_data.attribute_info[attribute].min_wins
+        min_wins = self.experiment_data.attribute_info[attribute].min_wins
                     
         if min_wins is None:
             return style
