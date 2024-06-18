@@ -5,9 +5,9 @@ from experimentdata import ExperimentData
 
 class Report(param.Parameterized):
   
-    def __init__(self, experiment_data = ExperimentData(), **params):
+    def __init__(self, **params):
         super().__init__(**params)
-        self.update_experiment_data(experiment_data)
+        self.experiment_data = ExperimentData()
         
         
     def update_experiment_data(self, new_data):

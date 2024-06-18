@@ -14,6 +14,7 @@ class AbsoluteTablereport(Tablereport):
     
     def __init__(self, **params):
         super().__init__(**params)
+        
         self.param_view = pn.Column(
             pn.pane.HTML("Attributes", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
             pn.widgets.CrossSelector.from_param(self.param.attributes, definition_order = False, width = 475, styles={'padding-left': '10px'}),

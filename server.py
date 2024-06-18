@@ -40,7 +40,6 @@ class ReportViewer(param.Parameterized):
         self.param.reportType.objects = [name for name in self.reports.keys()]
         self.reportType = self.param.reportType.objects[0]
         self.previous_reportType = self.reportType
-        self.experiment_data = ExperimentData("")
 
         self.views = dict()
         for key, r in self.reports.items():
@@ -50,6 +49,10 @@ class ReportViewer(param.Parameterized):
                                  )
         if self.param_config:
             set_from_param_config()
+        else:
+            self.experiment_data = ExperimentData()
+            for r in self.reports.values():
+                r.update_experiment_data(self.experiment_data)
         
         #register callback for creating config string for url
         self.param.watch(self.update_param_config,

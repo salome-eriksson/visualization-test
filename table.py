@@ -24,6 +24,8 @@ class Tablereport(Report):
     
     
     def __init__(self, **params):
+        super().__init__(**params)
+        
         self.placeholder = pn.Column(height=0, width=0) # used for the floatpanels that show ProblemTableReports
         self.problemreports = [] # used to store the ProblemTableReport shown in the floatpanels
         self.dummy = pn.widgets.Checkbox() # used for triggering the filter function
@@ -32,9 +34,6 @@ class Tablereport(Report):
         self.exp_data_dropna = pd.DataFrame() # same as self.experiment_data.data.dropna()
         self.table_data = pd.DataFrame() # experiment data with aggregates, should be used as base data
         self.view_data = pd.DataFrame()
-
-        # TODO: fix with proper initialization order such that we don't have invalid between param combinations
-        super().__init__(**params)
 
         stylesheet = """
             .tabulator-row.tabulator-selected .tabulator-cell{
@@ -58,6 +57,7 @@ class Tablereport(Report):
                                     pagination="remote", page_size=10000, frozen_columns=['Index'], 
                                     sizing_mode='stretch_both', configuration={"ajaxLoader":"False"},
                                     sortable=False, stylesheets=[stylesheet])
+
         self.view.add_filter(pn.bind(self.filter, dummy=self.dummy))
         self.view.style.apply(func=self.style_table_by_row, axis=1)
         self.view.on_click(self.on_click_callback)

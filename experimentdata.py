@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import pandas as pd
+from io import StringIO
 
 class Attribute():
     def __init__(self, name, default_min_wins = None, default_aggregator = None):
@@ -55,31 +56,8 @@ PREDEFINED_ATTRIBUTES = {
 }
 
 class ExperimentData():
-    def compute_ipc_score(self):
-        if "cost" not in self.data.index.get_level_values(0):
-            return
-        upper_bounds = pd.read_json("upper_bounds.json", orient="index")
-        upper_bounds = upper_bounds.set_index(["domain","problem"])
-        costs = self.data.loc["cost"]
-
-        for with_upper in [True, False]:
-            tmp_data = costs.copy()
-            if with_upper:
-                tmp_data["upper_bounds"] = upper_bounds
-            min_costs = tmp_data.min(axis=1)
-
-            score_data = (1/costs).fillna(0).multiply(min_costs, axis=0)
-            score_data["attribute"] = "ipc-sat-score" if with_upper else "ipc-sat-score-no-planning-domains"
-            score_data.set_index(["attribute", score_data.index], inplace=True)
-            self.data = pd.concat([self.data, score_data])
-            
-        self.attributes = sorted(self.attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
-        self.numeric_attributes = sorted(self.numeric_attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
-        self.data = self.data.sort_values("attribute")
-  
-    def __init__(self, properties_file=""):
+    def __init__(self, properties_file=StringIO("")):
         try:
-            # TODO: this might break in the future since read_json cannot handle passing json directly (although I don't do that?)
             self.data = pd.read_json(properties_file, orient="index")
             self.attributes = [x for x in self.data.columns if x not in ["algorithm", "domain", "problem"]]
             self.numeric_attributes = [x for x in self.attributes if pd.api.types.is_numeric_dtype(self.data.dtypes[x])]
@@ -123,6 +101,29 @@ class ExperimentData():
             self.attributes = []
             self.numeric_attributes = []
             self.data = pd.DataFrame(index= pd.MultiIndex.from_tuples([],names = ["attribute","domain","problem"]))
+
+
+    def compute_ipc_score(self):
+        if "cost" not in self.data.index.get_level_values(0):
+            return
+        upper_bounds = pd.read_json("upper_bounds.json", orient="index")
+        upper_bounds = upper_bounds.set_index(["domain","problem"])
+        costs = self.data.loc["cost"]
+
+        for with_upper in [True, False]:
+            tmp_data = costs.copy()
+            if with_upper:
+                tmp_data["upper_bounds"] = upper_bounds
+            min_costs = tmp_data.min(axis=1)
+
+            score_data = (1/costs).fillna(0).multiply(min_costs, axis=0)
+            score_data["attribute"] = "ipc-sat-score" if with_upper else "ipc-sat-score-no-planning-domains"
+            score_data.set_index(["attribute", score_data.index], inplace=True)
+            self.data = pd.concat([self.data, score_data])
+            
+        self.attributes = sorted(self.attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
+        self.numeric_attributes = sorted(self.numeric_attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
+        self.data = self.data.sort_values("attribute")
 
 
     def set_attribute_customizations(self, min_wins, aggregators):

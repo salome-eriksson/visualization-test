@@ -13,9 +13,9 @@ class ProblemTablereport(Report):
     algorithms = param.ListSelector()
 
 
-    def __init__(self, domain = None, problem = None, algorithms = None, 
-        sizing_mode = "stretch_both", **params):
+    def __init__(self, domain = None, problem = None, algorithms = None, sizing_mode = "stretch_both", **params):
         super().__init__(**params)
+
         self.sizing_mode = sizing_mode
         if domain and problem:
             self.domain = domain
@@ -31,6 +31,7 @@ class ProblemTablereport(Report):
             width=500
         )
 
+
     def set_experiment_data_dependent_parameters(self):
         param_updates = super().set_experiment_data_dependent_parameters()
         self.param.domain.objects = ["--"] + self.experiment_data.domains
@@ -45,7 +46,7 @@ class ProblemTablereport(Report):
 
     @param.depends('domain', watch=True)
     def update_problems(self):
-        if self.domain != "--": 
+        if self.domain != "--":
             self.param.problem.objects = ["--"] + self.experiment_data.problems[self.domain]
             self.problem = self.param.problem.objects[0]
 
@@ -82,7 +83,7 @@ class ProblemTablereport(Report):
             tabulator_formatters[alg] = {'type': 'textarea'}
         view_data = self.experiment_data.data[self.algorithms].xs((self.domain, self.problem), level=(1,2))
         self.view = pn.widgets.Tabulator(
-                value=view_data, disabled = True, sortable=False, pagination="remote", page_size=10000, widths=250, 
+                value=view_data, disabled = True, sortable=False, pagination="remote", page_size=10000, widths=250,
                 formatters=tabulator_formatters, frozen_columns=['attribute'], sizing_mode=self.sizing_mode)
         self.view.style.apply(func=self.style_table_by_row, axis=1)
         return self.view
@@ -92,7 +93,7 @@ class ProblemTablereport(Report):
         return self.param_view
 
 
-    def get_params_as_dict(self):      
+    def get_params_as_dict(self):
         return super().get_params_as_dict()
 
 

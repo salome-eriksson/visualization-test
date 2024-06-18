@@ -16,6 +16,7 @@ class DiffTablereport(Tablereport):
     
     def __init__(self, **params):
         super().__init__(**params)
+        
         self.param_view = pn.Param(self.param,  widgets= { "attributes": {"type": pn.widgets.CrossSelector, "definition_order" : False, "width" : 500}})
         
         self.param_view = pn.Column(

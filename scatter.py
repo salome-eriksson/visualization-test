@@ -59,6 +59,7 @@ class Scatterplot(Report):
     
     def __init__(self, **params):
         super().__init__(**params)
+        
         self.placeholder = pn.Column(height=0, width=0) # used for the floatpanels that show ProblemTableReports
         self.problemreports = [] # used to store the ProblemTableReport shown in the floatpanels
         self.view = pn.Column(figure())
