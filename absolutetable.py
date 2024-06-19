@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 import math
 import numpy as np
 import param
@@ -10,11 +8,11 @@ from table import Tablereport
 
 class AbsoluteTablereport(Tablereport):
     algorithms = param.ListSelector()
-    
-    
+
+
     def __init__(self, **params):
         super().__init__(**params)
-        
+
         self.param_view = pn.Column(
             pn.pane.HTML("Attributes", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
             pn.widgets.CrossSelector.from_param(self.param.attributes, definition_order = False, width = 475, styles={'padding-left': '10px'}),
@@ -25,23 +23,23 @@ class AbsoluteTablereport(Tablereport):
             pn.Param(self.param.precision),
             pn.pane.Markdown("""
                 ### Information
-                Data is organized by attribute, then domain, then problem. 
-                You can click on attributes/domains to unfold the next level, 
+                Data is organized by attribute, then domain, then problem.
+                You can click on attributes/domains to unfold the next level,
                 and reclick to fold again. Clicking on a concrete problem opens
-                a ProblemReport comparing all attributes for this specific 
-                problem. Several popups can be open at the same time, but they 
+                a ProblemReport comparing all attributes for this specific
+                problem. Several popups can be open at the same time, but they
                 will be removed when the ReportType is changed.
-                
-                Numeric values are aggregated over the set of instances where 
-                all selected algorithms have a value for the corresponding 
-                attribute. You can customize which aggregator to use with the 
-                dictionary "custom aggregators", for example `{"expansions" : 
-                "gmean"}`. Currently supported aggregators are "sum", "mean" 
+
+                Numeric values are aggregated over the set of instances where
+                all selected algorithms have a value for the corresponding
+                attribute. You can customize which aggregator to use with the
+                dictionary "custom aggregators", for example `{"expansions" :
+                "gmean"}`. Currently supported aggregators are "sum", "mean"
                 and "gmean".
-                
-                Numeric values are also color-coded, with blue denoting a worse 
-                and green a better value. You can customize whether the smaller 
-                value is better or not with the dictionary "custom min wins", 
+
+                Numeric values are also color-coded, with blue denoting a worse
+                and green a better value. You can customize whether the smaller
+                value is better or not with the dictionary "custom min wins",
                 for example `{"expansions" : True}` means smaller is better.
                 """),
             width=500
@@ -92,9 +90,9 @@ class AbsoluteTablereport(Tablereport):
         return self.param_view
 
 
-    def get_params_as_dict(self):      
+    def get_params_as_dict(self):
         params = super().get_params_as_dict()
-        
+
         # shorten the algorithms parameter by using indices instead of the attribute names
         if "algorithms" in params:
             params["algorithms"] = [self.param.algorithms.objects.index(a) for a in params["algorithms"]]

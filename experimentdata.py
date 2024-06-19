@@ -11,7 +11,7 @@ class Attribute():
 
     def set_min_wins(self, min_wins):
         self.min_wins = min_wins
-        
+
     def reset_min_wins(self):
         self.min_wins = self.default_min_wins
 
@@ -20,7 +20,7 @@ class Attribute():
 
     def reset_aggregator(self):
         self.aggregator = self.default_aggregator
-        
+
     def __str__(self):
         return f"{self.name} (min {'wins' if self.min_wins else 'loses' }, {self.aggregator} aggregator)"
 
@@ -55,6 +55,7 @@ PREDEFINED_ATTRIBUTES = {
   "translator_time_done" : (True, "gmean")
 }
 
+
 class ExperimentData():
     def __init__(self, properties_file=StringIO("")):
         try:
@@ -63,7 +64,7 @@ class ExperimentData():
             self.numeric_attributes = [x for x in self.attributes if pd.api.types.is_numeric_dtype(self.data.dtypes[x])]
             self.algorithms = list(self.data.algorithm.unique())
             self.domains = list(self.data.domain.unique())
-            
+
             # pivot such that the columns are a combination of algorithm-attribute, and then stack such that the attribute becomes part of the index
             self.data = self.data.pivot(index=["domain","problem"], columns="algorithm", values=self.attributes).stack(0, dropna = False)
             # pivot does not set a name for the newly created index column
@@ -93,7 +94,7 @@ class ExperimentData():
                     a = Attribute(attribute, None, None)
                 assert(a)
                 self.attribute_info[attribute] = a
-            
+
         except Exception as ex:
             self.algorithms = []
             self.domains = []
@@ -120,7 +121,7 @@ class ExperimentData():
             score_data["attribute"] = "ipc-sat-score" if with_upper else "ipc-sat-score-no-planning-domains"
             score_data.set_index(["attribute", score_data.index], inplace=True)
             self.data = pd.concat([self.data, score_data])
-            
+
         self.attributes = sorted(self.attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
         self.numeric_attributes = sorted(self.numeric_attributes + ["ipc-sat-score", "ipc-sat-score-no-planning-domains"])
         self.data = self.data.sort_values("attribute")
@@ -132,7 +133,7 @@ class ExperimentData():
                 a.reset_min_wins()
             else:
                 a.set_min_wins(min_wins[name])
-                
+
             if a.name not in aggregators.keys():
                 a.reset_aggregator()
             else:

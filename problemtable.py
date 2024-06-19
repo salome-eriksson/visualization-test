@@ -1,11 +1,8 @@
-#! /usr/bin/env python3
-
 import param
 import pandas as pd
 import panel as pn
 
 from report import Report
-
 
 class ProblemTablereport(Report):
     domain = param.Selector(default="--")

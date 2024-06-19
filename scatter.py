@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 from bokeh.plotting import figure
 from bokeh.models import HoverTool, TapTool, Legend, LegendItem, Span
 from functools import partial
@@ -15,16 +13,14 @@ from report import Report
 from experimentdata import ExperimentData
 from problemtable import ProblemTablereport
 
-
 hv.extension('bokeh')
 
-MARKERS = ["x", "circle", "square", "triangle", "asterisk", 
-           "diamond", "cross", "star", "inverted_triangle", "plus", 
+MARKERS = ["x", "circle", "square", "triangle", "asterisk",
+           "diamond", "cross", "star", "inverted_triangle", "plus",
            "hex", "y", "circle_cross", "square_cross", "diamond_cross",
            "circle_x", "square_x", "square_pin", "triangle_pin"]
-COLORS = ["black", "red", "blue", "teal", "orange", 
+COLORS = ["black", "red", "blue", "teal", "orange",
           "purple", "olive", "lime", "cyan"]
-
 
 def get_num_true(df):
     vc = df.value_counts()
@@ -32,8 +28,6 @@ def get_num_true(df):
         return 0
     else:
         return vc[True]
-
-        
 
 
 class Scatterplot(Report):
@@ -55,11 +49,11 @@ class Scatterplot(Report):
     marker_fill_alpha = param.Number(default = 0.0, bounds=(0.0,1.0))
     markers = param.List(default=MARKERS)
     colors = param.List(default=COLORS)
-    
-    
+
+
     def __init__(self, **params):
         super().__init__(**params)
-        
+
         self.placeholder = pn.Column(height=0, width=0) # used for the floatpanels that show ProblemTableReports
         self.problemreports = [] # used to store the ProblemTableReport shown in the floatpanels
         self.view = pn.Column(figure())
@@ -85,37 +79,37 @@ class Scatterplot(Report):
             pn.Param(self.param.colors),
             pn.pane.Markdown("""
                 ### Information
-                In entries list you can specify several combinations of 
-                algorithms that you want to compare against each other, one 
+                In entries list you can specify several combinations of
+                algorithms that you want to compare against each other, one
                 combination per row:
-                
-                - "alg1" will use alg1 on both the x and y axis, 
+
+                - "alg1" will use alg1 on both the x and y axis,
                   and has legend entry "alg1"
-                - "alg1 alg2" will use alg1 on the x and alg2 on the y axis, 
+                - "alg1 alg2" will use alg1 on the x and alg2 on the y axis,
                   and has legend entry "alg1 vs alg2"
-                - "alg1 alg2 x" will use alg1 on the x and alg2 on the y axis, 
+                - "alg1 alg2 x" will use alg1 on the x and alg2 on the y axis,
                   and has legend entry "x"
                 - "\*x\* \*y\*" will search for all algorithm pairs whose name
                   only differs in that the first algorithm contains "x" and the
                   second contains "y". For example "\*base\* \*v1\*" would allow
                   you to easily compare the base and v1 versions of all
                   algorithms.
-                
-                If "Autoscale" is deactivated, you can specify the x and y 
-                ranges of the plot yourself; otherwise it will be computed 
+
+                If "Autoscale" is deactivated, you can specify the x and y
+                ranges of the plot yourself; otherwise it will be computed
                 based on min/max values of the data points.
-                
-                For relative or log plots you can use "Replace zero" to replace 
-                all 0 values with the chosen number. Otherwise data points with 
+
+                For relative or log plots you can use "Replace zero" to replace
+                all 0 values with the chosen number. Otherwise data points with
                 a 0 will be dropped.
-                
-                Clicking on a datapoint will highlight this point and open a 
-                popup with a ProblemTablereport for the particular problem. 
-                Clicking anywhere else in the plot removes the highlight. 
+
+                Clicking on a datapoint will highlight this point and open a
+                popup with a ProblemTablereport for the particular problem.
+                Clicking anywhere else in the plot removes the highlight.
                 Several popups can be open at the same time, but they will be
                 removed when the ReportType is changed.
             """)
-            
+
         )
         self.data_view_in_progress = False
 
@@ -163,27 +157,28 @@ class Scatterplot(Report):
             if not invalid_algorithms:
                 entries.append((xalg,yalg,name))
         return entries
-  
-  
+
+
     def on_click_callback(self, attr, old, new, df):
         if new:
             domain = df.iloc[new[0]]['domain']
             problem = df.iloc[new[0]]['problem']
             algs = df.iloc[new[0]]['algs']
-            
+
             self.problemreports.append(ProblemTablereport(
                 experiment_data = self.experiment_data, sizing_mode = "stretch_width",
                 domain = domain, problem = problem, algorithms = algs))
             floatpanel = pn.layout.FloatPanel(
-                self.problemreports[-1].data_view, name = f"{domain} - {problem}", contained = False, 
+                self.problemreports[-1].data_view, name = f"{domain} - {problem}", contained = False,
                 height = 750, width = 750, position = "center", config = {"closeOnEscape" : True})
             self.placeholder.append(floatpanel)
-            
-            
+
+
     def deactivate(self):
         self.problemreports.clear()
-        self.placeholder.clear()        
-        
+        self.placeholder.clear()
+
+
     def data_view(self):
         if self.data_view_in_progress:
             return
@@ -218,7 +213,7 @@ class Scatterplot(Report):
         if overall_frame.empty:
             self.data_view_in_progress = False
             return pn.pane.Markdown("All points have been dropped")
-        
+
         # Define axis labels
         tmp = overall_frame.replace(np.nan, np.Infinity)
         num_x_lower = get_num_true(tmp['x'] < tmp['y'])
@@ -231,7 +226,7 @@ class Scatterplot(Report):
         num_y_failed_single = get_num_true(y_failed_table & ~x_failed_table)
         xlabel = self.xattribute + f" (lower: {num_x_lower}, failed: {num_x_failed}, failed single: {num_x_failed_single})"
         ylabel = self.yattribute + f" (lower: {num_y_lower}, failed: {num_y_failed}, failed single: {num_y_failed_single})"
-        
+
         # Compute min and max values.
         xmax = overall_frame[xcol].max()
         xmin = overall_frame[xcol].min()
@@ -248,21 +243,21 @@ class Scatterplot(Report):
         y_failed = int(10 ** math.ceil(math.log10(ymax))) if self.yscale == "log" else ymax*1.1
         overall_frame[xcol].replace(np.nan,x_failed, inplace=True)
         overall_frame[ycol].replace(np.nan,y_failed, inplace=True)
-        
+
         # Compute ranges if they are not specified.
         if self.autoscale:
             self.param.update({
               "x_range" : (xmin*0.9, x_failed*1.1),
               "y_range" : (ymin*0.9, y_failed*1.1)
             })
-        
+
         indices = []
         if self.groupby == "name":
             indices = [name for _, _, name in algorithm_pairs]
         else:
             indices = list(set(overall_frame.index.get_level_values(0)))
             indices.sort()
-        
+
         # compute appropriate number of columns and height of legend
         indices_length = [len(i) for i in indices]
         ncols = 1
@@ -276,8 +271,8 @@ class Scatterplot(Report):
             if (width > self.xsize):
                 ncols -= 1
                 break
-            
-        plot = figure(width=self.xsize, height=self.ysize + 23*math.ceil(len(indices)/ncols),  
+
+        plot = figure(width=self.xsize, height=self.ysize + 23*math.ceil(len(indices)/ncols),
                       x_axis_label=xlabel, y_axis_label = ylabel,
                       x_axis_type = self.xscale, y_axis_type = self.yscale,
                       x_range = self.x_range, y_range = self.y_range)
@@ -288,24 +283,24 @@ class Scatterplot(Report):
         min_point = min(self.x_range[0],self.y_range[0])
         max_point = max(self.x_range[1],self.y_range[1])
         plot.line(x=[min_point, max_point], y=[1,1] if self.relative else [min_point, max_point], color='black')
-        
+
         legend_items = []
         for i, index in enumerate(indices):
             df = overall_frame.loc[[index]].reset_index()
-            p = plot.scatter(x=xcol, y=ycol, source=df, 
-                line_color=self.colors[i%len(COLORS)], marker=self.markers[i%len(MARKERS)], 
-                fill_color=self.colors[i%len(COLORS)], fill_alpha=self.marker_fill_alpha, 
+            p = plot.scatter(x=xcol, y=ycol, source=df,
+                line_color=self.colors[i%len(COLORS)], marker=self.markers[i%len(MARKERS)],
+                fill_color=self.colors[i%len(COLORS)], fill_alpha=self.marker_fill_alpha,
                 size=self.marker_size, muted_fill_alpha = min(0.1,self.marker_fill_alpha))
             p.data_source.selected.on_change('indices', partial(self.on_click_callback, df=df))
             legend_items.append(LegendItem(label=index, renderers = [plot.renderers[i+3]]))
-        
-        
+
+
         # legend
         legend = Legend(items = legend_items)
         legend.click_policy='mute'
         plot.add_layout(legend, 'below')
         plot.legend.ncols = ncols
-        
+
         # hover info
         plot.add_tools(HoverTool(tooltips=[
             ('Domain', '@domain'),
@@ -318,9 +313,10 @@ class Scatterplot(Report):
         plot.add_tools(TapTool())
 
         self.data_view_in_progress = False
-        
+
         self.view[0] = plot
         return self.full_view
+
 
     # TODO: figure out if we can do without the watcher, it causes unnecessary output
     @param.depends('available_algorithms', watch=True)

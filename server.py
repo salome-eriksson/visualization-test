@@ -6,17 +6,14 @@ import param
 import panel as pn
 import zlib # for compressing the json parameter dict
 
-from experimentdata import ExperimentData
-from report import Report
-from scatter import Scatterplot
 from absolutetable import AbsoluteTablereport
 from difftable import DiffTablereport
+from experimentdata import ExperimentData
 from problemtable import ProblemTablereport
+from scatter import Scatterplot
 
 pn.extension('tabulator')
 pn.extension('floatpanel')
-
-
 
 class ReportViewer(param.Parameterized):
     reportType = param.Selector()
@@ -25,12 +22,13 @@ class ReportViewer(param.Parameterized):
     custom_aggregators = param.Dict(default={})
     param_config = param.String(precedence=-1)
 
+
     def __init__(self, **params):
         super().__init__(**params)
 
         self.setting_param_config = False
         self.setting_params = False
-        
+
         self.reports = {
             "Absolute Report" : AbsoluteTablereport(name="Absolute Report"),
             "Diff Report" : DiffTablereport(name="Diff Report"),
@@ -53,7 +51,7 @@ class ReportViewer(param.Parameterized):
             self.experiment_data = ExperimentData()
             for r in self.reports.values():
                 r.update_experiment_data(self.experiment_data)
-        
+
         #register callback for creating config string for url
         self.param.watch(self.update_param_config,
             ["properties_file", "reportType", "custom_min_wins",
@@ -81,6 +79,7 @@ class ReportViewer(param.Parameterized):
         self.experiment_data = ExperimentData(self.properties_file)
         for r in self.reports.values():
             r.update_experiment_data(self.experiment_data)
+
 
     @param.depends('custom_min_wins', 'custom_aggregators', watch=True)
     def update_attributes(self):
@@ -130,6 +129,7 @@ class ReportViewer(param.Parameterized):
         except Exception as ex:
             pass
         self.setting_params = False
+
 
 
 viewer = ReportViewer()
