@@ -2,6 +2,7 @@ import param
 import pandas as pd
 import panel as pn
 
+from experimentdata import ExperimentData
 from report import Report
 
 class ProblemTablereport(Report):
@@ -10,16 +11,10 @@ class ProblemTablereport(Report):
     algorithms = param.ListSelector()
 
 
-    def __init__(self, domain = None, problem = None, algorithms = None, sizing_mode = "stretch_both", **params):
-        super().__init__(**params)
+    def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), sizing_mode = "stretch_both", **params):
+        super().__init__(experiment_data, **params)
 
         self.sizing_mode = sizing_mode
-        if domain and problem:
-            self.domain = domain
-            self.problem = problem
-        if algorithms:
-            self.algorithms = algorithms
-
         self.param_view = pn.Column(
             pn.Param(self.param.domain),
             pn.Param(self.param.problem),
@@ -27,6 +22,12 @@ class ProblemTablereport(Report):
             pn.widgets.CrossSelector.from_param(self.param.algorithms, definition_order = False, width = 475, styles={'padding-left': '10px'}),
             width=500
         )
+        param_dict = self.set_experiment_data_dependent_parameters() | param_dict
+        self.param.update(param_dict)
+        # Setting the domain triggers update_problems, which overwrites problem
+        # -> we need to set it again
+        if "problem" in param_dict:
+            self.problem = param_dict["problem"]
 
 
     def set_experiment_data_dependent_parameters(self):

@@ -51,8 +51,8 @@ class Scatterplot(Report):
     colors = param.List(default=COLORS)
 
 
-    def __init__(self, **params):
-        super().__init__(**params)
+    def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), **params):
+        super().__init__(experiment_data, **params)
 
         self.placeholder = pn.Column(height=0, width=0) # used for the floatpanels that show ProblemTableReports
         self.problemreports = [] # used to store the ProblemTableReport shown in the floatpanels
@@ -112,6 +112,8 @@ class Scatterplot(Report):
 
         )
         self.data_view_in_progress = False
+        param_dict = self.set_experiment_data_dependent_parameters() | param_dict
+        self.param.update(param_dict)
 
 
     def set_experiment_data_dependent_parameters(self):
@@ -160,17 +162,22 @@ class Scatterplot(Report):
 
 
     def on_click_callback(self, attr, old, new, df):
-        if new:
-            domain = df.iloc[new[0]]['domain']
-            problem = df.iloc[new[0]]['problem']
-            algs = df.iloc[new[0]]['algs']
-
+        old_set = set(old)
+        new_set = set(new)
+        change = list((old_set - new_set) | (new_set - old_set))
+        if change:
+            param_dict = {
+                "domain": df.iloc[change[0]]['domain'],
+                "problem": df.iloc[change[0]]['problem'],
+                "algorithms": df.iloc[change[0]]['algs']
+            }
             self.problemreports.append(ProblemTablereport(
-                experiment_data = self.experiment_data, sizing_mode = "stretch_width",
-                domain = domain, problem = problem, algorithms = algs))
+                self.experiment_data, param_dict, "stretch_width"))
             floatpanel = pn.layout.FloatPanel(
-                self.problemreports[-1].data_view, name = f"{domain} - {problem}", contained = False,
-                height = 750, width = 750, position = "center", config = {"closeOnEscape" : True})
+                self.problemreports[-1].data_view,
+                name = f"{param_dict['domain']} - {param_dict['problem']}",
+                contained = False, height = 750, width = 750, position = "center",
+                config = {"closeOnEscape" : True})
             self.placeholder.append(floatpanel)
 
 

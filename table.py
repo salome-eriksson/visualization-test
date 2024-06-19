@@ -21,8 +21,8 @@ class Tablereport(Report):
     precision = param.Integer(default=3)
 
 
-    def __init__(self, **params):
-        super().__init__(**params)
+    def __init__(self, experiment_data = ExperimentData(), **params):
+        super().__init__(experiment_data, **params)
 
         self.placeholder = pn.Column(height=0, width=0) # used for the floatpanels that show ProblemTableReports
         self.problemreports = [] # used to store the ProblemTableReport shown in the floatpanels
@@ -140,9 +140,13 @@ class Tablereport(Report):
 
         # clicked on concrete problem -> open problem wise report
         if problem != "--":
+            param_dict = {
+                "domain": domain,
+                "problem": problem,
+                "algorithms": self.get_current_columns()
+            }
             self.problemreports.append(ProblemTablereport(
-                experiment_data = self.experiment_data, sizing_mode = "stretch_width",
-                domain = domain, problem = problem, algorithms = self.get_current_columns()))
+                self.experiment_data, param_dict, sizing_mode = "stretch_width"))
             floatpanel = pn.layout.FloatPanel(
                 self.problemreports[-1].data_view, name = f"{domain} - {problem}", contained = False,
                 height = 750, width = 750, position = "center", config = {"closeOnEscape" : True})

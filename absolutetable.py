@@ -4,14 +4,15 @@ import param
 import pandas as pd
 import panel as pn
 
+from experimentdata import ExperimentData
 from table import Tablereport
 
 class AbsoluteTablereport(Tablereport):
     algorithms = param.ListSelector()
 
 
-    def __init__(self, **params):
-        super().__init__(**params)
+    def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), **params):
+        super().__init__(experiment_data, **params)
 
         self.param_view = pn.Column(
             pn.pane.HTML("Attributes", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
@@ -44,6 +45,8 @@ class AbsoluteTablereport(Tablereport):
                 """),
             width=500
         )
+        param_dict = self.set_experiment_data_dependent_parameters() | param_dict
+        self.param.update(param_dict)
 
 
     def set_experiment_data_dependent_parameters(self):

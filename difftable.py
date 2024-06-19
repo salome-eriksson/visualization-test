@@ -4,6 +4,7 @@ import param
 import pandas as pd
 import panel as pn
 
+from experimentdata import ExperimentData
 from table import Tablereport
 
 class DiffTablereport(Tablereport):
@@ -12,8 +13,8 @@ class DiffTablereport(Tablereport):
     percentual = param.Boolean(default=False)
 
 
-    def __init__(self, **params):
-        super().__init__(**params)
+    def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), **params):
+        super().__init__(experiment_data, **params)
 
         self.param_view = pn.Param(self.param,  widgets= { "attributes": {"type": pn.widgets.CrossSelector, "definition_order" : False, "width" : 500}})
 
@@ -51,7 +52,8 @@ class DiffTablereport(Tablereport):
                 """),
             width=500
         )
-
+        param_dict = self.set_experiment_data_dependent_parameters() | param_dict
+        self.param.update(param_dict)
 
     def set_experiment_data_dependent_parameters(self):
         param_updates = super().set_experiment_data_dependent_parameters()

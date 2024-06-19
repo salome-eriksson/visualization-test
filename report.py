@@ -4,9 +4,9 @@ import panel as pn
 from experimentdata import ExperimentData
 
 class Report(param.Parameterized):
-    def __init__(self, **params):
+    def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), **params):
         super().__init__(**params)
-        self.experiment_data = ExperimentData()
+        self.experiment_data = experiment_data
 
 
     def update_experiment_data(self, new_data):
