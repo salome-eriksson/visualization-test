@@ -42,8 +42,8 @@ class ReportViewer(param.Parameterized):
         self.views = dict()
         for key, r in self.reports.items():
             self.views[key] = pn.Row(
-                                    pn.Column(pn.Param(self.param, name=""), r.param_view),
-                                    pn.panel(r.data_view, defer_load=True), sizing_mode='stretch_both'
+                                    pn.Column(pn.Param(self.param, name=""), r.view_param),
+                                    pn.panel(r.view_data, defer_load=True), sizing_mode='stretch_both'
                                  )
         if self.param_config:
             set_from_param_config()
@@ -86,7 +86,7 @@ class ReportViewer(param.Parameterized):
         self.experiment_data.set_attribute_customizations(
             self.custom_min_wins, self.custom_aggregators)
         for r in self.reports.values():
-            r.data_view()
+            r.view_data()
 
 
     def view(self):

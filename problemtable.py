@@ -14,7 +14,11 @@ class ProblemTablereport(Report):
     def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), sizing_mode = "stretch_both", **params):
         super().__init__(experiment_data, **params)
 
-        self.sizing_mode = sizing_mode
+        self.data_view = pn.widgets.Tabulator(
+                value=pd.DataFrame(), disabled = True, sortable=False, pagination="remote", page_size=10000, widths=250,
+                frozen_columns=['attribute'], sizing_mode=sizing_mode)
+        self.data_view.style.apply(func=self.style_table_by_row, axis=1)
+
         self.param_view = pn.Column(
             pn.Param(self.param.domain),
             pn.Param(self.param.problem),
@@ -22,6 +26,7 @@ class ProblemTablereport(Report):
             pn.widgets.CrossSelector.from_param(self.param.algorithms, definition_order = False, width = 475, styles={'padding-left': '10px'}),
             width=500
         )
+
         param_dict = self.set_experiment_data_dependent_parameters() | param_dict
         self.param.update(param_dict)
         # Setting the domain triggers update_problems, which overwrites problem
@@ -39,14 +44,17 @@ class ProblemTablereport(Report):
         self.param.algorithms.objects = self.experiment_data.algorithms
         self.param.algorithms.default = self.experiment_data.algorithms
         param_updates["algorithms"] = self.experiment_data.algorithms
+
+        self.data_view.formatters = { alg : {'type' : 'textarea'} for alg in self.experiment_data.algorithms }
         return param_updates
 
 
     @param.depends('domain', watch=True)
     def update_problems(self):
+        self.param.problem.objects = ["--"]
         if self.domain != "--":
-            self.param.problem.objects = ["--"] + self.experiment_data.problems[self.domain]
-            self.problem = self.param.problem.objects[0]
+            self.param.problem.objects += self.experiment_data.problems[self.domain]
+        self.problem = self.param.problem.objects[0]
 
 
     def style_table_by_row(self, row):
@@ -72,23 +80,11 @@ class ProblemTablereport(Report):
         return style
 
 
-    def data_view(self):
+    def update_data_view(self):
         if not self.problem or self.problem == "--":
-            return pn.pane.Markdown()
-
-        tabulator_formatters = dict()
-        for alg in self.algorithms:
-            tabulator_formatters[alg] = {'type': 'textarea'}
-        view_data = self.experiment_data.data[self.algorithms].xs((self.domain, self.problem), level=(1,2))
-        self.view = pn.widgets.Tabulator(
-                value=view_data, disabled = True, sortable=False, pagination="remote", page_size=10000, widths=250,
-                formatters=tabulator_formatters, frozen_columns=['attribute'], sizing_mode=self.sizing_mode)
-        self.view.style.apply(func=self.style_table_by_row, axis=1)
-        return self.view
-
-
-    def param_view(self):
-        return self.param_view
+            self.data_view.value = pd.DataFrame()
+        else:
+            self.data_view.value = self.experiment_data.data[self.algorithms].xs((self.domain, self.problem), level=(1,2))
 
 
     def get_params_as_dict(self):

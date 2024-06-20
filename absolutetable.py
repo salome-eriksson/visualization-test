@@ -14,14 +14,9 @@ class AbsoluteTablereport(Tablereport):
     def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), **params):
         super().__init__(experiment_data, **params)
 
-        self.param_view = pn.Column(
-            pn.pane.HTML("Attributes", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
-            pn.widgets.CrossSelector.from_param(self.param.attributes, definition_order = False, width = 475, styles={'padding-left': '10px'}),
-            pn.pane.HTML("Domains", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
-            pn.widgets.CrossSelector.from_param(self.param.domains, definition_order = False, width = 475, styles={'padding-left': '10px'}),
+        self.param_view.extend([
             pn.pane.HTML("Algorithms", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
             pn.widgets.CrossSelector.from_param(self.param.algorithms, definition_order = False, width = 475, styles={'padding-left': '10px'}),
-            pn.Param(self.param.precision),
             pn.pane.Markdown("""
                 ### Information
                 Data is organized by attribute, then domain, then problem.
@@ -42,9 +37,8 @@ class AbsoluteTablereport(Tablereport):
                 and green a better value. You can customize whether the smaller
                 value is better or not with the dictionary "custom min wins",
                 for example `{"expansions" : True}` means smaller is better.
-                """),
-            width=500
-        )
+                """)
+        ])
         param_dict = self.set_experiment_data_dependent_parameters() | param_dict
         self.param.update(param_dict)
 
@@ -57,8 +51,8 @@ class AbsoluteTablereport(Tablereport):
         return param_updates
 
 
-    def compute_view_data(self):
-        return self.table_data[["Index"] + self.algorithms]
+    def get_view_table(self):
+        return self.table[["Index"] + self.algorithms]
 
 
     def get_current_columns(self):
@@ -87,10 +81,6 @@ class AbsoluteTablereport(Tablereport):
                 blue = ((1-percentage)*255).astype(int)
                 style[i] = style[i]+ "color: #00{:02x}{:02x};".format(green, blue)
         return style
-
-
-    def param_view(self):
-        return self.param_view
 
 
     def get_params_as_dict(self):

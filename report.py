@@ -7,6 +7,8 @@ class Report(param.Parameterized):
     def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), **params):
         super().__init__(**params)
         self.experiment_data = experiment_data
+        self.param_view = pn.pane.Str("Placeholder Param View")
+        self.data_view = pn.pane.Str("Placeholder Data View")
 
 
     def update_experiment_data(self, new_data):
@@ -21,14 +23,27 @@ class Report(param.Parameterized):
         return dict()
 
 
-    def param_view(self):
-        return pn.Param(self.param)
+    def view_param(self):
+        self.update_param_view()
+        return self.param_view
 
 
-    def data_view(self):
+    def view_data(self):
+        self.update_data_view()
+        return self.data_view
+
+
+    # updates self.param_view
+    def update_param_view(self):
         pass
 
 
+    # updates self.data_view
+    def update_data_view(self):
+        pass
+
+
+    # used by ReportWithPopup to remove the Problemtablereports
     def deactivate(self):
         pass
 

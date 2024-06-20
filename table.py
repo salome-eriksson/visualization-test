@@ -8,73 +8,72 @@ from collections import defaultdict
 import panel as pn
 from scipy import stats
 
-from report import Report
+from prpopupreport import PRPopupReport
 from experimentdata import ExperimentData
 from problemtable import ProblemTablereport
 
 # TODO: is replacing 0 with something like 0.0001 a valid approach for gmean?
 # TODO: fix warnings for gmean
 
-class Tablereport(Report):
+class Tablereport(PRPopupReport):
     attributes = param.ListSelector()
     domains = param.ListSelector()
     precision = param.Integer(default=3)
 
+    stylesheet = """
+        .tabulator-row.tabulator-selected .tabulator-cell{
+            background-color: #9abcea !important;
+        }
+
+        .tabulator-row:hover {
+            background-color: #bbbbbb !important;
+        }
+
+        .tabulator .tabulator-row.tabulator-selectable:hover .tabulator-cell{
+            background-color: #769bcc !important;
+        }
+    """
 
     def __init__(self, experiment_data = ExperimentData(), **params):
         super().__init__(experiment_data, **params)
 
-        self.placeholder = pn.Column(height=0, width=0) # used for the floatpanels that show ProblemTableReports
-        self.problemreports = [] # used to store the ProblemTableReport shown in the floatpanels
-        self.dummy = pn.widgets.Checkbox() # used for triggering the filter function
         self.unfolded = dict() # which attributes/domains for each attribute are unfolded in the table
         self.computed = dict() # per attribute: used aggregator, are domain aggregatos up to date
         self.exp_data_dropna = pd.DataFrame() # same as self.experiment_data.data.dropna()
-        self.table_data = pd.DataFrame() # experiment data with aggregates, should be used as base data
-        self.view_data = pd.DataFrame()
-
-        stylesheet = """
-            .tabulator-row.tabulator-selected .tabulator-cell{
-                background-color: #9abcea !important;
-            }
-
-            .tabulator-row:hover {
-                background-color: #bbbbbb !important;
-            }
-
-            .tabulator .tabulator-row.tabulator-selectable:hover .tabulator-cell{
-                background-color: #769bcc !important;
-            }
-        """
-
-        # TODO: currently added to absolutetable.py, figure out how to add it here and use in subclasses.
-        # ~ self.param_view = pn.Param(self.param,  widgets= {"attributes": {"type": pn.widgets.CrossSelector, "definition_order" : False, "width" : 500}})
+        self.table = pd.DataFrame() # experiment data with aggregates, should be used as base data
 
         # ajaxLoader false is set to reduce blinking (https://github.com/olifolkerd/tabulator/issues/1027)
-        self.view = pn.widgets.Tabulator(value=self.view_data, disabled = True, show_index = False,
-                                    pagination="remote", page_size=10000, frozen_columns=['Index'],
-                                    sizing_mode='stretch_both', configuration={"ajaxLoader":"False"},
-                                    sortable=False, stylesheets=[stylesheet])
+        self.data_view = pn.widgets.Tabulator(
+            value=self.table, disabled = True, show_index = False,
+            pagination="remote", page_size=10000, frozen_columns=['Index'],
+            sizing_mode='stretch_both', configuration={"ajaxLoader":"False"},
+            sortable=False, stylesheets=[Tablereport.stylesheet]
+        )
+        self.data_view.add_filter(self.filter)
+        self.data_view.style.apply(func=self.style_table_by_row, axis=1)
+        self.data_view.on_click(self.on_click_callback)
 
-        self.view.add_filter(pn.bind(self.filter, dummy=self.dummy))
-        self.view.style.apply(func=self.style_table_by_row, axis=1)
-        self.view.on_click(self.on_click_callback)
-        self.full_view = pn.Column(self.view, self.placeholder)
-
+        self.param_view = pn.Column(
+            pn.Param(self.param.precision),
+            pn.pane.HTML("Attributes", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
+            pn.widgets.CrossSelector.from_param(self.param.attributes, definition_order = False, width = 475, styles={'padding-left': '10px'}),
+            pn.pane.HTML("Domains", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
+            pn.widgets.CrossSelector.from_param(self.param.domains, definition_order = False, width = 475, styles={'padding-left': '10px'}),
+            width=500
+        )
 
     def set_experiment_data_dependent_parameters(self):
         param_updates = super().set_experiment_data_dependent_parameters()
 
         # Reset fields.
         self.exp_data_dropna = self.experiment_data.data.dropna()
-        self.table_data = pd.DataFrame()
-        self.view_data = pd.DataFrame()
+        self.table = pd.DataFrame()
         self.unfolded = dict()
         self.computed = { attribute : {"aggregator": None, "domains_outdated" : True} for attribute in self.experiment_data.numeric_attributes }
-        self.computed["__columns"] = self.experiment_data.algorithms
+        self.computed["__columns"] = []
+        self.computed["__domains"] = []
         self.param.attributes.objects = self.experiment_data.attributes
         self.param.attributes.default = self.experiment_data.attributes
-        self.computed["__domains"] = self.experiment_data.algorithms
         self.param.domains.objects = self.experiment_data.domains
         self.param.domains.default = self.experiment_data.domains
         param_updates["attributes"] =  self.experiment_data.attributes
@@ -85,17 +84,17 @@ class Tablereport(Report):
                                         names = ["attribute", "domain", "problem"])
         aggregated_data_skeleton = pd.DataFrame(data = "", index = mi, columns = self.experiment_data.algorithms)
         # Combine experiment data and aggregated data skeleton.
-        self.table_data = pd.concat([self.experiment_data.data, aggregated_data_skeleton]).sort_index()
+        self.table = pd.concat([self.experiment_data.data, aggregated_data_skeleton]).sort_index()
 
         # Add Index column (solely used in the visualization).
-        pseudoindex = [x[0] if x[1]=="--" else (x[1] if x[2] == "--" else x[2]) for x in self.table_data.index]
-        self.table_data.insert(0, "Index", pseudoindex)
+        pseudoindex = [x[0] if x[1]=="--" else (x[1] if x[2] == "--" else x[2]) for x in self.table.index]
+        self.table.insert(0, "Index", pseudoindex)
 
         return param_updates
 
 
-    def compute_view_data(self):
-        return self.table_data
+    def get_view_table(self):
+        return self.table
 
 
     def get_current_columns(self):
@@ -115,7 +114,7 @@ class Tablereport(Report):
         return style
 
 
-    def filter(self, df, dummy):
+    def filter(self, df):
         if df.empty:
             return df
 
@@ -130,27 +129,17 @@ class Tablereport(Report):
                 indices += [(a,d,p) for p in self.experiment_data.problems[d]]
         indices.sort()
         max_length = max([len(x) for x in df.loc[indices]['Index']])
-        self.view.widths = {'Index': 10+max_length*7}
+        self.data_view.widths = {'Index': 10+max_length*7}
         return df.loc[indices]
 
 
     def on_click_callback(self, e):
-        row = self.view_data.iloc[e.row]
+        row = self.table.iloc[e.row]
         attribute, domain, problem = row.name[0:3]
 
         # clicked on concrete problem -> open problem wise report
         if problem != "--":
-            param_dict = {
-                "domain": domain,
-                "problem": problem,
-                "algorithms": self.get_current_columns()
-            }
-            self.problemreports.append(ProblemTablereport(
-                self.experiment_data, param_dict, sizing_mode = "stretch_width"))
-            floatpanel = pn.layout.FloatPanel(
-                self.problemreports[-1].data_view, name = f"{domain} - {problem}", contained = False,
-                height = 750, width = 750, position = "center", config = {"closeOnEscape" : True})
-            self.placeholder.append(floatpanel)
+            self.add_problem_report_popup(domain, problem, self.get_current_columns())
             return
 
         # clicked on domain aggregate -> (un)fold that domain for that attribute
@@ -168,39 +157,34 @@ class Tablereport(Report):
                 self.unfolded[attribute] = []
                 if attribute in self.experiment_data.numeric_attributes:
                     self.aggregate_domains_for_attribute(attribute)
-                    self.view.value = self.compute_view_data()
-                    self.view.selection = []
-                    self.view.selection = [e.row]
-                    return
 
-        # Changing the value of dummy forces the filter to be reapplied.
-        # Setting the selection tells the tabulator to display that row. This
-        # order of assignments leads to the least blinking/jumping.
-        self.view.selection = []
-        self.dummy.value = not self.dummy.value
-        self.view.selection = [e.row]
+        self.view_data()
+        # Setting the selection makes the redrawn table jump to that row.
+        # TODO: unfortunately this results in blinking, can we do better?
+        self.data_view.selection = []
+        self.data_view.selection = [e.row]
 
 
     def aggregate_where_necessary(self):
         current_columns = self.get_current_columns()
         columns_outdated = current_columns != self.computed["__columns"]
         domains_outdated = self.domains != self.computed["__domains"]
+        self.computed["__columns"] = current_columns
+        self.computed["__domains"] = self.domains
 
-        # If the columns used for aggreagtion are outdated, recompute dropna to only consider current columns.
+        # If the columns used for aggregation are outdated, recompute dropna to only consider current columns.
         if columns_outdated:
             unique_columns = list(dict.fromkeys(current_columns))
             if not unique_columns:
                 return
             self.exp_data_dropna = self.experiment_data.data[unique_columns].dropna()
-            self.computed["__columns"] = current_columns
-            self.computed["__domains"] = self.domains
 
-        cols_without_index = self.table_data.columns[1:]
+        cols_without_index = self.table.columns[1:]
         for attribute in self.experiment_data.numeric_attributes:
             aggregator = self.experiment_data.attribute_info[attribute].aggregator
             if not columns_outdated and not domains_outdated and aggregator == self.computed[attribute]["aggregator"]:
                 continue
-
+            self.computed[attribute]["aggregator"] = aggregator
 
             # Compute the overall aggregate.
             attribute_data = None
@@ -218,9 +202,9 @@ class Tablereport(Report):
                     aggregator = stats.gmean
                     attribute_data = attribute_data.replace(0,0.000001)
                 new_aggregates = attribute_data.agg(aggregator)
-            self.table_data.loc[(attribute, "--", "--"),cols_without_index] = new_aggregates
+            self.table.loc[(attribute, "--", "--"),cols_without_index] = new_aggregates
 
-            self.table_data.loc[(attribute, "--", "--"),"Index"] = index_string + f"{num_problems}/{self.experiment_data.num_problems})"
+            self.table.loc[(attribute, "--", "--"),"Index"] = index_string + f"{num_problems}/{self.experiment_data.num_problems})"
 
             self.computed[attribute]["domains_outdated"] = True
             if attribute in self.unfolded:
@@ -229,10 +213,10 @@ class Tablereport(Report):
 
     def aggregate_domains_for_attribute(self, attribute, attribute_data = None):
         # Represents the slice of all domain aggregate rows, but without the Index column.
-        rows, cols = (attribute, slice(self.experiment_data.domains[0], self.experiment_data.domains[-1]), "--"), self.table_data.columns[1:]
+        rows, cols = (attribute, slice(self.experiment_data.domains[0], self.experiment_data.domains[-1]), "--"), self.table.columns[1:]
         # This can happen if there are no problems where all columns have a value for the attribute.
         if attribute not in self.exp_data_dropna.index:
-            self.table_data.loc[rows,cols] = np.NaN
+            self.table.loc[rows,cols] = np.NaN
             return
 
         if attribute_data is None:
@@ -244,22 +228,19 @@ class Tablereport(Report):
                 attribute_data.replace(0,0.000001, inplace=True)
 
         # Clear the slice and apply combine_first (this way, the newly aggregated data is taken wherever it exists).
-        self.table_data.loc[rows,cols] = np.NaN
-        self.table_data.loc[rows,cols] = self.table_data.loc[rows,cols].combine_first(attribute_data.groupby(level=0).agg(aggregator))
+        self.table.loc[rows,cols] = np.NaN
+        self.table.loc[rows,cols] = self.table.loc[rows,cols].combine_first(attribute_data.groupby(level=0).agg(aggregator))
 
         for domain in self.experiment_data.domains:
             num_problems = len(self.experiment_data.problems[domain])
             num_aggregated = 0 if domain not in attribute_data.index.get_level_values(0) else len(attribute_data.loc[domain].index)
-            self.table_data.loc[(attribute, domain, "--"),'Index'] = f"{domain} ({num_aggregated}/{num_problems})"
+            self.table.loc[(attribute, domain, "--"),'Index'] = f"{domain} ({num_aggregated}/{num_problems})"
 
         self.computed[attribute]["domains_outdated"] = False
 
 
-    def data_view(self):
-        self.aggregate_where_necessary()
-        self.view_data = self.compute_view_data()
-        self.view.value = self.view_data
-
+    def update_data_view(self):
+        # TODO: precision does not actually update until domains are changed
         template = f"""
           <%= function formatnumber() {{
             f_val = parseFloat(value);
@@ -274,18 +255,11 @@ class Tablereport(Report):
             }}
           }}() %>
         """
+        for x in self.get_current_columns():
+            self.data_view.formatters[x] = HTMLTemplateFormatter(template=template)
+        self.aggregate_where_necessary()
+        self.data_view.value = self.get_view_table()
 
-        self.view.formatters = {x : HTMLTemplateFormatter(template=template) for x in self.view_data.columns }
-        return self.full_view
-
-
-    def param_view(self):
-        return self.param_view
-
-
-    def deactivate(self):
-        self.problemreports.clear()
-        self.placeholder.clear()
 
 
     def get_params_as_dict(self):

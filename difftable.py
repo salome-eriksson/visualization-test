@@ -16,17 +16,10 @@ class DiffTablereport(Tablereport):
     def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), **params):
         super().__init__(experiment_data, **params)
 
-        self.param_view = pn.Param(self.param,  widgets= { "attributes": {"type": pn.widgets.CrossSelector, "definition_order" : False, "width" : 500}})
-
-        self.param_view = pn.Column(
-            pn.pane.HTML("Attributes", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
-            pn.widgets.CrossSelector.from_param(self.param.attributes, definition_order = False, width = 475, styles={'padding-left': '10px'}),
-            pn.pane.HTML("Domains", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
-            pn.widgets.CrossSelector.from_param(self.param.domains, definition_order = False, width = 475, styles={'padding-left': '10px'}),
+        self.param_view.extend([
             pn.Param(self.param.algorithm1),
             pn.Param(self.param.algorithm2),
             pn.Param(self.param.percentual),
-            pn.Param(self.param.precision),
             pn.pane.Markdown("""
                 ### Information
                 Data is organized by attribute, then domain, then problem.
@@ -49,9 +42,8 @@ class DiffTablereport(Tablereport):
 
                 Percentual computes the Diff column with
                 (Algorithm2/Algorithm1)-1 instead of Algorithm2-Algorithm1.
-                """),
-            width=500
-        )
+                """)
+        ])
         param_dict = self.set_experiment_data_dependent_parameters() | param_dict
         self.param.update(param_dict)
 
@@ -64,14 +56,14 @@ class DiffTablereport(Tablereport):
         return param_updates
 
 
-    def compute_view_data(self):
+    def get_view_table(self):
         if self.algorithm1 == "--" or self.algorithm2 == "--" or self.algorithm1 == self.algorithm2:
             return pd.DataFrame()
 
         mapping = dict()
-        retdata = self.table_data[["Index",self.algorithm1, self.algorithm2]].copy()
-        col1_numeric = pd.to_numeric(self.table_data[self.algorithm1], errors="coerce")
-        col2_numeric = pd.to_numeric(self.table_data[self.algorithm2], errors="coerce")
+        retdata = self.table[["Index",self.algorithm1, self.algorithm2]].copy()
+        col1_numeric = pd.to_numeric(self.table[self.algorithm1], errors="coerce")
+        col2_numeric = pd.to_numeric(self.table[self.algorithm2], errors="coerce")
         if self.percentual:
             retdata["Diff"] = (col2_numeric / col1_numeric)-1
         else:
@@ -101,10 +93,6 @@ class DiffTablereport(Tablereport):
             color= 'green'
         style[-1] += f"color: {color}"
         return style
-
-
-    def param_view(self):
-        return self.param_view
 
 
     def get_params_as_dict(self):

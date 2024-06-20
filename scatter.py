@@ -9,9 +9,9 @@ import holoviews as hv
 import hvplot.pandas
 import panel as pn
 
-from report import Report
 from experimentdata import ExperimentData
 from problemtable import ProblemTablereport
+from prpopupreport import PRPopupReport
 
 hv.extension('bokeh')
 
@@ -30,7 +30,7 @@ def get_num_true(df):
         return vc[True]
 
 
-class Scatterplot(Report):
+class Scatterplot(PRPopupReport):
     xattribute = param.Selector(default="--")
     yattribute = param.Selector(default="--")
     entries_list = param.String(default="")
@@ -54,10 +54,7 @@ class Scatterplot(Report):
     def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), **params):
         super().__init__(experiment_data, **params)
 
-        self.placeholder = pn.Column(height=0, width=0) # used for the floatpanels that show ProblemTableReports
-        self.problemreports = [] # used to store the ProblemTableReport shown in the floatpanels
-        self.view = pn.Column(figure())
-        self.full_view = pn.Column(self.view, self.placeholder)
+        self.data_view = figure()
         self.param_view = pn.Column(
             pn.Param(self.param.xattribute),
             pn.Param(self.param.yattribute),
@@ -162,31 +159,17 @@ class Scatterplot(Report):
 
 
     def on_click_callback(self, attr, old, new, df):
-        old_set = set(old)
+        old_set = set(old) if old else set()
         new_set = set(new)
         change = list((old_set - new_set) | (new_set - old_set))
         if change:
-            param_dict = {
-                "domain": df.iloc[change[0]]['domain'],
-                "problem": df.iloc[change[0]]['problem'],
-                "algorithms": df.iloc[change[0]]['algs']
-            }
-            self.problemreports.append(ProblemTablereport(
-                self.experiment_data, param_dict, "stretch_width"))
-            floatpanel = pn.layout.FloatPanel(
-                self.problemreports[-1].data_view,
-                name = f"{param_dict['domain']} - {param_dict['problem']}",
-                contained = False, height = 750, width = 750, position = "center",
-                config = {"closeOnEscape" : True})
-            self.placeholder.append(floatpanel)
+            domain = df.iloc[change[0]]['domain']
+            problem = df.iloc[change[0]]['problem']
+            algorithms = df.iloc[change[0]]['algs']
+            self.add_problem_report_popup(domain, problem, algorithms)
 
 
-    def deactivate(self):
-        self.problemreports.clear()
-        self.placeholder.clear()
-
-
-    def data_view(self):
+    def update_data_view(self):
         if self.data_view_in_progress:
             return
         algorithm_pairs = self.get_algorithm_pairs()
@@ -319,17 +302,12 @@ class Scatterplot(Report):
             ]))
         plot.add_tools(TapTool())
 
+        self.data_view = plot
         self.data_view_in_progress = False
 
-        self.view[0] = plot
-        return self.full_view
 
-
-    # TODO: figure out if we can do without the watcher, it causes unnecessary output
-    @param.depends('available_algorithms', watch=True)
-    def param_view(self):
+    def update_param_view(self):
         self.param_view[3] = pn.pane.Markdown(f"**Available Algorithms:**\n {self.available_algorithms}")
-        return self.param_view
 
 
     def get_params_as_dict(self):
