@@ -16,7 +16,7 @@ class ProblemTablereport(Report):
 
         self.data_view = pn.widgets.Tabulator(
                 value=pd.DataFrame(), disabled = True, sortable=False, pagination="remote", page_size=10000, widths=250,
-                frozen_columns=['attribute'], sizing_mode=sizing_mode)
+                frozen_columns = ["attribute"], show_index = False, sizing_mode=sizing_mode)
         self.data_view.style.apply(func=self.style_table_by_row, axis=1)
 
         self.param_view = pn.Column(
@@ -59,7 +59,7 @@ class ProblemTablereport(Report):
 
     def style_table_by_row(self, row):
         style = [""] * len(row)
-        attribute = row.name
+        attribute = row.iloc[0]
         min_wins = self.experiment_data.attribute_info[attribute].min_wins
         if min_wins is None:
             return style
@@ -84,7 +84,7 @@ class ProblemTablereport(Report):
         if not self.problem or self.problem == "--":
             self.data_view.value = pd.DataFrame()
         else:
-            self.data_view.value = self.experiment_data.data[self.algorithms].xs((self.domain, self.problem), level=(1,2))
+            self.data_view.value = self.experiment_data.data[self.algorithms].xs((self.domain, self.problem), level=(1,2)).reset_index()
 
 
     def get_params_as_dict(self):
