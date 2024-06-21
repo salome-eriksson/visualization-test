@@ -41,6 +41,7 @@ class Tablereport(PRPopupReport):
         self.computed = dict() # per attribute: used aggregator, are domain aggregatos up to date
         self.exp_data_dropna = pd.DataFrame() # same as self.experiment_data.data.dropna()
         self.table = pd.DataFrame() # experiment data with aggregates, should be used as base data
+        self.previous_precision = -1 # used to find out if we need to reapply formatters
 
         # ajaxLoader false is set to reduce blinking (https://github.com/olifolkerd/tabulator/issues/1027)
         self.data_view = pn.widgets.Tabulator(
@@ -72,6 +73,8 @@ class Tablereport(PRPopupReport):
         self.computed = { attribute : {"aggregator": None, "domains_outdated" : True} for attribute in self.experiment_data.numeric_attributes }
         self.computed["__columns"] = []
         self.computed["__domains"] = []
+        self.previous_precision = -1
+
         self.param.attributes.objects = self.experiment_data.attributes
         self.param.attributes.default = self.experiment_data.attributes
         self.param.domains.objects = self.experiment_data.domains
@@ -240,25 +243,29 @@ class Tablereport(PRPopupReport):
 
 
     def update_data_view(self):
-        # TODO: precision does not actually update until domains are changed
-        template = f"""
-          <%= function formatnumber() {{
-            f_val = parseFloat(value);
-            if (!isNaN(f_val)) {{
-              if (Number.isInteger(f_val)) {{
-                return '<div style="text-align:right">' + f_val + "</div>";
-              }} else {{
-                return '<div style="text-align:right">' + f_val.toFixed({self.precision}) + "</div>";
-              }}
-            }} else {{
-              return  value;
-            }}
-          }}() %>
-        """
-        for x in self.get_current_columns():
-            self.data_view.formatters[x] = HTMLTemplateFormatter(template=template)
         self.aggregate_where_necessary()
-        self.data_view.value = self.get_view_table()
+        new_table = self.get_view_table()
+
+        # we need to define formatters before setting the new table as new value
+        if self.precision != self.previous_precision:
+            self.previous_precision = self.precision
+            template = f"""
+              <%= function formatnumber() {{
+                f_val = parseFloat(value);
+                if (!isNaN(f_val)) {{
+                  if (Number.isInteger(f_val)) {{
+                    return '<div style="text-align:right">' + f_val + "</div>";
+                  }} else {{
+                    return '<div style="text-align:right">' + f_val.toFixed({self.precision}) + "</div>";
+                  }}
+                }} else {{
+                  return  value;
+                }}
+              }}() %>
+            """
+            self.data_view.formatters = {x: HTMLTemplateFormatter(template=template) for x in new_table.columns}
+
+        self.data_view.value = new_table
 
 
 
