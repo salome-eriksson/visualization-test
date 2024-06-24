@@ -11,6 +11,7 @@ from difftable import DiffTablereport
 from experimentdata import ExperimentData
 from problemtable import ProblemTablereport
 from scatter import Scatterplot
+from wisetable import WiseTablereport
 
 pn.extension('tabulator')
 pn.extension('floatpanel')
@@ -33,7 +34,8 @@ class ReportViewer(param.Parameterized):
             "Absolute Report" : AbsoluteTablereport(name="Absolute Report"),
             "Diff Report" : DiffTablereport(name="Diff Report"),
             "Problem Report" : ProblemTablereport(name="Problem Report"),
-            "Scatter Plot" : Scatterplot(name="Scatter Plot")
+            "Scatter Plot" : Scatterplot(name="Scatter Plot"),
+            # ~ "Wise Report": WiseTablereport(name="Wise Report")
         }
         self.param.reportType.objects = [name for name in self.reports.keys()]
         self.reportType = self.param.reportType.objects[0]
@@ -72,6 +74,9 @@ class ReportViewer(param.Parameterized):
              "groupby", "xscale", "yscale", "autoscale", "x_range", "y_range",
              "replace_zero", "xsize", "ysize", "marker_size", "marker_fill_alpha",
              "markers", "colors"])
+        # ~ self.reports["Wise Report"].param.watch(
+            # ~ self.update_param_config,
+            # ~ ["attribute", "algorithms"])
 
 
     @param.depends('properties_file', watch=True)
