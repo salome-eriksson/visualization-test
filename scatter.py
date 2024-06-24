@@ -200,9 +200,10 @@ class Scatterplot(PRPopupReport):
         if self.yscale == "log":
             overall_frame = overall_frame[~(overall_frame[ycol] <= 0)]
 
-        if overall_frame.empty:
+        if overall_frame.empty or pd.isnull(overall_frame[xcol]).all() or pd.isnull(overall_frame[ycol]).all():
+            self.data_view = pn.pane.Markdown("All points have been dropped")
             self.data_view_in_progress = False
-            return pn.pane.Markdown("All points have been dropped")
+            return
 
         # Define axis labels
         tmp = overall_frame.replace(np.nan, np.Infinity)

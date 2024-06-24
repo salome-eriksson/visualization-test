@@ -33,5 +33,4 @@ class PRPopupReport(Report):
 
 
     def deactivate(self):
-        self.data_view_column[1] = pn.Column(height=0, width=0)
         self.data_view_column[1].clear()
