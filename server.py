@@ -76,7 +76,7 @@ class ReportViewer(param.Parameterized):
              "markers", "colors"])
         # ~ self.reports["Wise Report"].param.watch(
             # ~ self.update_param_config,
-            # ~ ["attribute", "algorithms"])
+            # ~ ["attribute"])
 
 
     @param.depends('properties_file', watch=True)

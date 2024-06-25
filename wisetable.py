@@ -1,3 +1,4 @@
+import numpy as np
 import param
 import pandas as pd
 import panel as pn
@@ -7,15 +8,16 @@ from report import Report
 
 class WiseTablereport(Report):
     attribute = param.Selector(default="--")
-    algorithms = param.ListSelector()
 
 
     def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), **params):
         super().__init__(experiment_data, **params)
 
-        self.domain_wise = pn.widgets.Tabulator(pd.DataFrame(), disabled = True, sizing_mode="stretch_both")
-        self.task_wise = pn.widgets.Tabulator(pd.DataFrame(), disabled = True, sizing_mode="stretch_both")
-        self.comparison = pn.widgets.Tabulator(pd.DataFrame(), disabled = True, sizing_mode="stretch_both")
+        self.domain_wise_table = pd.DataFrame()
+        self.task_wise_table = pd.DataFrame()
+        self.domain_wise = pn.widgets.Tabulator(pd.DataFrame(), disabled = True, pagination="remote", page_size=1000)
+        self.task_wise = pn.widgets.Tabulator(pd.DataFrame(), disabled = True, pagination="remote", page_size=1000)
+        self.comparison = pn.widgets.Tabulator(pd.DataFrame(), disabled = True, pagination="remote", page_size=100)
 
         self.data_view = pn.Column(
             pn.pane.HTML("Domain Wise", styles={'font-size': '12pt', 'font-family': 'Arial', 'font-weight': 'bold', 'padding-left': '10px'}),
@@ -29,10 +31,7 @@ class WiseTablereport(Report):
         # ~ self.data_view.style.apply(func=self.style_table_by_row, axis=1)
 
         self.param_view = pn.Column(
-            pn.Param(self.param.attribute),
-            pn.pane.HTML("Algorithms", styles={'font-size': '10pt', 'font-family': 'Arial', 'padding-left': '10px'}),
-            pn.widgets.CrossSelector.from_param(self.param.algorithms, definition_order = False, width = 475, styles={'padding-left': '10px'}),
-            width=500
+            pn.Param(self.param.attribute)
         )
 
         param_dict = self.set_experiment_data_dependent_parameters() | param_dict
@@ -43,9 +42,12 @@ class WiseTablereport(Report):
         param_updates = super().set_experiment_data_dependent_parameters()
         self.param.attribute.objects = ["--"] + self.experiment_data.numeric_attributes
         param_updates["attribute"] = self.param.attribute.objects[0]
-        self.param.algorithms.objects = self.experiment_data.algorithms
-        self.param.algorithms.default = self.experiment_data.algorithms
-        param_updates["algorithms"] = self.experiment_data.algorithms
+
+
+        d = { a1 : {a2 : 0 for a2 in self.experiment_data.algorithms} for a1 in self.experiment_data.algorithms }
+        self.task_wise_table = pd.DataFrame(d)
+        self.domain_wise_table = pd.DataFrame(d)
+
         return param_updates
 
     # ~ def style_table_by_row(self, row):
@@ -72,28 +74,38 @@ class WiseTablereport(Report):
 
 
     def update_data_view(self):
-        # TODO: Check if patching the table would be an idea
-        # https://panel.holoviz.org/reference/widgets/Tabulator.html#patching
-        self.domain_wise.value = pd.DataFrame( {
-           a1 : {a2 : 0 for a2 in self.algorithms} for a1 in self.algorithms
-        })
-        self.task_wise.value = pd.DataFrame( {
-           a1 : {a2 : 0 for a2 in self.algorithms} for a1 in self.algorithms
-        })
-
         if not self.attribute or self.attribute == "--":
             self.data_view.value = pd.DataFrame()
             return
 
+        min_wins = self.experiment_data.attribute_info[self.attribute].min_wins
+
         attribute_table = self.experiment_data.data.loc[self.attribute].copy()
-        task_wise_dict = { a1 : {a2 : 0 for a2 in self.algorithms} for a1 in self.algorithms }
+        domain_group = pd.DataFrame()
+        attribute_table.replace([np.NaN, None], np.inf if min_wins else -np.inf, inplace=True)
 
-        for a1 in self.algorithms:
-            for a2 in self.algorithms:
+
+
+        for a1 in self.experiment_data.algorithms:
+            l = []
+            for a2 in self.experiment_data.algorithms:
                 attribute_table[(a1,a2)] = attribute_table[a1]-attribute_table[a2]
-                task_wise_dict[a1][a2] = len(attribute_table[~(attribute_table[(a1,a2)] > 0)].index)
+                attribute_table[(a1,a2,"win")] = np.sign(attribute_table[(a1,a2)])
+                if min_wins:
+                  attribute_table[(a1,a2,"win")] *= -1
+                num_better = len(attribute_table[(attribute_table[(a1,a2,"win")] > 0)].index)
+                self.task_wise_table.at[a1,a2] = num_better
 
-        self.task_wise.value = pd.DataFrame(task_wise_dict)
+                domain_group[(a1,a2,"win")] = attribute_table[(a1,a2,"win")].groupby(["domain"]).sum()
+                self.domain_wise_table.at[a1,a2] = len(domain_group[domain_group[(a1,a2,"win")] > 0].index)
+
+        domain_group["problem"] = "--"
+        domain_group = domain_group.reset_index().set_index(["domain","problem"])
+        tmp = pd.concat([attribute_table, domain_group]).sort_index()
+
+        self.task_wise.value = self.task_wise_table[self.experiment_data.algorithms]
+        self.domain_wise.value = self.domain_wise_table[self.experiment_data.algorithms]
+        self.comparison.value = tmp[[("HEAD-blind-verify", "HEAD-blind-noverify"), ("HEAD-blind-verify", "HEAD-blind-noverify", "win")]]
 
     def get_params_as_dict(self):
         return super().get_params_as_dict()
@@ -102,4 +114,3 @@ class WiseTablereport(Report):
     # we set domain and problem sepearately because domain prepares the problem attribute with the possible values
     def set_params_from_dict(self, params):
         self.attribute = params["attribute"]
-        self.algorithms = params["algorithms"]
