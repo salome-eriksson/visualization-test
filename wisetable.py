@@ -38,7 +38,14 @@ class WiseTablereport(PRPopupReport):
         )
 
         self.param_view = pn.Column(
-            pn.Param(self.param.attribute)
+            pn.Param(self.param.attribute),
+            pn.pane.Markdown("""
+                ### Information
+
+                Shows on how many domains/problems the row entry algorithm is
+                better than the column entry algorithm. Clicking on a cell
+                gives a detailed comparison table below the domain/task wise tables.
+            """)
         )
 
         param_dict = self.set_experiment_data_dependent_parameters() | param_dict

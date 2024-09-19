@@ -19,7 +19,10 @@ class DiffTablereport(Tablereport):
         self.param_view.extend([
             pn.Param(self.param.algorithm1),
             pn.Param(self.param.algorithm2),
-            pn.Param(self.param.percentual),
+            pn.Row(
+                pn.Param(self.param.percentual),
+                pn.widgets.TooltipIcon(value="If true, the Diff column is computed with\n(Algorithm2/Algorithm1)-1 instead of\nAlgorithm2-Algorithm1.")
+            ), #added separate tooltip since the checkbox widget does not seem to support making a tooltip from the param doc
             pn.pane.Markdown("""
                 ### Information
                 Data is organized by attribute, then domain, then problem.
@@ -31,17 +34,8 @@ class DiffTablereport(Tablereport):
 
                 Numeric values are aggregated over the set of instances where
                 both algorithms have a value for the corresponding attribute.
-                You can customize which aggregator to use with the dictionary
-                "custom aggregators", for example `{"expansions" : "gmean"}`.
-                Currently supported aggregators are "sum", "mean" and "gmean".
-
-                Numeric values are also color-coded, with blue denoting a worse
-                and green a better value. You can customize whether the smaller
-                value is better or not with the dictionary "custom min wins",
-                for example `{"expansions" : True}` means smaller is better.
-
-                Percentual computes the Diff column with
-                (Algorithm2/Algorithm1)-1 instead of Algorithm2-Algorithm1.
+                They are also color-coded, with blue denoting a worse
+                and green a better value.
                 """)
         ])
         param_dict = self.set_experiment_data_dependent_parameters() | param_dict

@@ -18,7 +18,7 @@ from problemtable import ProblemTablereport
 class Tablereport(PRPopupReport):
     attributes = param.ListSelector()
     domains = param.ListSelector()
-    precision = param.Integer(default=3)
+    precision = param.Integer(label="Floating point precision", default=3)
 
     stylesheet = """
         .tabulator-row.tabulator-selected .tabulator-cell{

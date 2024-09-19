@@ -28,15 +28,8 @@ class AbsoluteTablereport(Tablereport):
 
                 Numeric values are aggregated over the set of instances where
                 all selected algorithms have a value for the corresponding
-                attribute. You can customize which aggregator to use with the
-                dictionary "custom aggregators", for example `{"expansions" :
-                "gmean"}`. Currently supported aggregators are "sum", "mean"
-                and "gmean".
-
-                Numeric values are also color-coded, with blue denoting a worse
-                and green a better value. You can customize whether the smaller
-                value is better or not with the dictionary "custom min wins",
-                for example `{"expansions" : True}` means smaller is better.
+                attribute. They are also color-coded, with blue denoting a worse
+                and green a better value.
                 """)
         ])
         param_dict = self.set_experiment_data_dependent_parameters() | param_dict

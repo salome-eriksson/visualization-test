@@ -19,10 +19,12 @@ pn.extension('tabulator')
 pn.extension('terminal')
 
 class ReportViewer(param.Parameterized):
-    reportType = param.Selector()
+    report_type = param.Selector()
     properties_file = param.String(default="")
-    custom_min_wins = param.Dict(default={})
-    custom_aggregators = param.Dict(default={})
+    custom_min_wins = param.Dict(default={},
+        doc="Dictionary mapping (numeric) attributes to True/False, indicating whether a lower value is better or not.")
+    custom_aggregators = param.Dict(default={},
+        doc="Dictionary mapping (numeric) attributes to the type of aggregation (sum, mean, gmean)")
     param_config = param.String(precedence=-1)
 
 
@@ -40,9 +42,9 @@ class ReportViewer(param.Parameterized):
             "Scatter Plot" : Scatterplot(name="Scatter Plot"),
             "Wise Report": WiseTablereport(name="Wise Report")
         }
-        self.param.reportType.objects = [name for name in self.reports.keys()]
-        self.reportType = self.param.reportType.objects[0]
-        self.previous_reportType = self.reportType
+        self.param.report_type.objects = [name for name in self.reports.keys()]
+        self.report_type = self.param.report_type.objects[0]
+        self.previous_report_type = self.report_type
 
         self.views = dict()
         for key, r in self.reports.items():
@@ -59,7 +61,7 @@ class ReportViewer(param.Parameterized):
 
         #register callback for creating config string for url
         self.param.watch(self.update_param_config,
-            ["properties_file", "reportType", "custom_min_wins",
+            ["properties_file", "report_type", "custom_min_wins",
              "custom_aggregators"])
         self.reports["Absolute Report"].param.watch(
             self.update_param_config,
@@ -73,9 +75,9 @@ class ReportViewer(param.Parameterized):
             ["domain", "problem", "algorithms"])
         self.reports["Scatter Plot"].param.watch(
             self.update_param_config,
-            ["xattribute", "yattribute", "entries_list", "relative",
-             "groupby", "xscale", "yscale", "autoscale", "x_range", "y_range",
-             "replace_zero", "xsize", "ysize", "marker_size", "marker_fill_alpha",
+            ["x_attribute", "y_attribute", "entries_list", "relative",
+             "group_by", "x_scale", "y_scale", "autoscale", "x_range", "y_range",
+             "replace_zero", "x_size", "y_size", "marker_size", "marker_fill_alpha",
              "markers", "colors"])
         self.reports["Wise Report"].param.watch(
             self.update_param_config,
@@ -98,20 +100,20 @@ class ReportViewer(param.Parameterized):
 
 
     def view(self):
-        if (self.previous_reportType != self.reportType):
-            self.reports[self.previous_reportType].deactivate()
-        self.previous_reportType = self.reportType
-        return self.views[self.reportType]
+        if (self.previous_report_type != self.report_type):
+            self.reports[self.previous_report_type].deactivate()
+        self.previous_report_type = self.report_type
+        return self.views[self.report_type]
 
 
     def update_param_config(self, *events):
         if self.setting_params:
             return
         self.setting_param_config = True
-        params = self.reports[self.reportType].get_params_as_dict()
+        params = self.reports[self.report_type].get_params_as_dict()
         if self.properties_file != self.param.properties_file.default:
             params["properties_file"] = self.properties_file
-        params["reportType"] = sorted(self.reports.keys()).index(self.reportType)
+        params["report_type"] = sorted(self.reports.keys()).index(self.report_type)
         params["version"] = "1.0"
         params["custom_min_wins"] = self.custom_min_wins
         params["custom_aggregators"] = self.custom_aggregators
@@ -128,12 +130,12 @@ class ReportViewer(param.Parameterized):
             params = json.loads(zlib.decompress(base64.urlsafe_b64decode(self.param_config.encode())))
             self.param.update({
                 "properties_file": params.pop("properties_file"),
-                "reportType": sorted(self.reports.keys())[int(params.pop("reportType"))],
+                "report_type": sorted(self.reports.keys())[int(params.pop("report_type"))],
                 "custom_min_wins": params.pop("custom_min_wins"),
                 "custom_aggregators": params.pop("custom_aggregators"),
             })
             assert(params.pop("version") == "1.0")
-            self.reports[self.reportType].set_params_from_dict(params)
+            self.reports[self.report_type].set_params_from_dict(params)
         except Exception as ex:
             pass
         self.setting_params = False
