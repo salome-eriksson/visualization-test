@@ -2,6 +2,7 @@
 
 import base64 # for encoding the compressed json parameter dict as url
 import json # for dumping the parameter dict as json
+import logging
 import param
 import panel as pn
 import zlib # for compressing the json parameter dict
@@ -13,8 +14,9 @@ from problemtable import ProblemTablereport
 from scatter import Scatterplot
 from wisetable import WiseTablereport
 
-pn.extension('tabulator')
 pn.extension('floatpanel')
+pn.extension('tabulator')
+pn.extension('terminal')
 
 class ReportViewer(param.Parameterized):
     reportType = param.Selector()
@@ -26,6 +28,7 @@ class ReportViewer(param.Parameterized):
 
     def __init__(self, **params):
         super().__init__(**params)
+        self.logger = logging.getLogger("panel")
 
         self.setting_param_config = False
         self.setting_params = False
@@ -44,9 +47,9 @@ class ReportViewer(param.Parameterized):
         self.views = dict()
         for key, r in self.reports.items():
             self.views[key] = pn.Row(
-                                    pn.Column(pn.Param(self.param, name=""), r.view_param),
-                                    pn.panel(r.view_data, defer_load=True), sizing_mode='stretch_both'
-                                 )
+                                  pn.Column(pn.Param(self.param, name=""), r.view_param, width=500, scroll=True),
+                                  pn.panel(r.view_data, defer_load=True, scroll=True), sizing_mode='stretch_both'
+                              )
         if self.param_config:
             set_from_param_config()
         else:
@@ -138,6 +141,7 @@ class ReportViewer(param.Parameterized):
 
 
 viewer = ReportViewer()
-view = pn.Row(viewer.view)
+debugger = pn.widgets.Debugger(name='debugger', level=logging.INFO, logger_names=["panel"], only_last=False)
+view = pn.Column(viewer.view, debugger)
 pn.state.location.sync(viewer, { "param_config" : "c" })
 view.servable()

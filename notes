@@ -1,28 +1,30 @@
 TODOS:
 
 features:
-- scatter allow for wildcards in entries_list (e.g *v1* *v2*)
-- enable sorting in Tablereports
-- scatter plot by order given in entries list
-- use styling/min_wins in ProblemReport
 - cactusplot
-- Domain/Taskwise?
 - upload properties file?
-- loading screen when loading properties file?
-- scatter parameters for marker type/color
 - cross select vertical?
+- i-buttons for explaining parameters
+- collapse groups of parameters with accordions
+- option for renaming algorithms/config strings within the tool
+- dedicated box for log and error message (akin to console output)
+- cancel loading?
+- WiseReport: comparison as popup instead of below the other tables
 
 refactor:
+- check that reports do things the same way as lab (eg mean values)
+- Scatterplot: entries list -> regex with groups?
 - index column width changing/too small?
-- floating point formatting
 - error messages (e.g. when properties is not a property file)
 - combine Diff and Absolute Report?
   -> otherwise, try to avoid computing all aggregates etc two times
-- reduce load time for scatter when grouping by domain
 - scatter: why did I have shared_axes = False?
 - see that we don't waste time when reports are initialized with specific values
   -> also a problem when clicking link?
   -> should help prepare for use in jupyter
-- Floatpanel does not close when removed programmatically
 - Floatpanel wrong height (see eg https://discourse.holoviz.org/t/tabulator-in-floatpanel-height-size-is-not-correct-mre-when-the-floatpanel-is-dynamically-added/6497)
   -> cannot use sizing_mode = "stretch_both" (table disappears completely)
+
+other:
+- move to aibasel on github
+- setup issue tracker on github

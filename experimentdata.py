@@ -1,4 +1,5 @@
 import json
+import logging
 import numpy as np
 import pandas as pd
 from io import StringIO
@@ -57,8 +58,10 @@ PREDEFINED_ATTRIBUTES = {
 
 
 class ExperimentData():
-    def __init__(self, properties_file=StringIO("")):
+    def __init__(self, properties_file=""):
+        self.logger = logging.getLogger("panel")
         try:
+            self.logger.info(f"Reading in experiment data from {properties_file}")
             self.data = pd.read_json(properties_file, orient="index")
             self.attributes = [x for x in self.data.columns if x not in ["algorithm", "domain", "problem"]]
             self.numeric_attributes = [x for x in self.attributes if pd.api.types.is_numeric_dtype(self.data.dtypes[x])]
@@ -95,6 +98,8 @@ class ExperimentData():
                 assert(a)
                 self.attribute_info[attribute] = a
 
+            self.logger.info(f"Done reading in experiment data from {properties_file}")
+
         except Exception as ex:
             self.algorithms = []
             self.domains = []
@@ -102,6 +107,10 @@ class ExperimentData():
             self.attributes = []
             self.numeric_attributes = []
             self.data = pd.DataFrame(index= pd.MultiIndex.from_tuples([],names = ["attribute","domain","problem"]))
+
+            if properties_file != "":
+                l = logging.getLogger("panel")
+                l.warning(f"Could not find {properties_file}")
 
 
     def compute_ipc_score(self):
