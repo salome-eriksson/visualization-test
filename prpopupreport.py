@@ -8,7 +8,7 @@ from problemtable import ProblemTablereport
 class PRPopupReport(Report):
     def __init__(self, experiment_data, **params):
         super().__init__(experiment_data, **params)
-        self.data_view_column = pn.Column(self.data_view, pn.Column(height=0, width=0))
+        self.data_view_column = pn.Column(self.data_view, pn.Column(height=0, width=0), sizing_mode='stretch_both', scroll=True)
 
 
     def view_data(self):

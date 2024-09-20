@@ -294,7 +294,7 @@ class Scatterplot(PRPopupReport):
             ]))
         plot.add_tools(TapTool())
 
-        self.data_view = plot
+        self.data_view = pn.Column(plot, sizing_mode="fixed", scroll=True)
         self.data_view_in_progress = False
 
 
