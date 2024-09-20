@@ -50,6 +50,16 @@ class DiffTablereport(Tablereport):
         return param_updates
 
 
+    def update_algorithm_names(self, mapping):
+        super().update_algorithm_names(mapping)
+        self.param.algorithm1.objects = ["--", *self.experiment_data.algorithms]
+        self.param.algorithm2.objects = ["--", *self.experiment_data.algorithms]
+        mapping["--"] = "--"
+        self.param.update({
+            "algorithm1": mapping[self.algorithm1],
+            "algorithm2": mapping[self.algorithm2]
+        })
+
     def get_view_table(self):
         if self.algorithm1 == "--" or self.algorithm2 == "--" or self.algorithm1 == self.algorithm2:
             return pd.DataFrame()

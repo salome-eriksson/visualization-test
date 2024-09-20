@@ -8,6 +8,7 @@ import pandas as pd
 import holoviews as hv
 import hvplot.pandas
 import panel as pn
+import re
 
 from experimentdata import ExperimentData
 from problemtable import ProblemTablereport
@@ -113,6 +114,15 @@ class Scatterplot(PRPopupReport):
         param_updates["available_algorithms"] =  "{}".format("\n".join(self.experiment_data.algorithms))
         return param_updates
 
+
+    def update_algorithm_names(self, mapping):
+        updates = {}
+        updates["available_algorithms"] = "{}".format("\n".join(self.experiment_data.algorithms))
+        # source: https://code.activestate.com/recipes/81330-single-pass-multiple-replace/
+        regex = re.compile("(%s)" % "|".join(map(re.escape, mapping.keys())))
+        new_entries_list = regex.sub(lambda mo: mapping[mo.string[mo.start():mo.end()]], self.entries_list)
+        updates["entries_list"] = new_entries_list
+        self.param.update(updates)
 
     @param.depends('autoscale', watch=True)
     def set_scale_restrictions(self):

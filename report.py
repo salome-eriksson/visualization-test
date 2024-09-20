@@ -16,6 +16,9 @@ class Report(param.Parameterized):
         param_updates = self.set_experiment_data_dependent_parameters()
         self.param.update(param_updates)
 
+    def update_algorithm_names(self, mapping):
+        pass
+
 
     # Returns a dictionary of parameters and values they should be set to
     # This dicitionary is batch updated in update_experiment_data.

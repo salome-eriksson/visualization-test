@@ -43,6 +43,11 @@ class AbsoluteTablereport(Tablereport):
         param_updates["algorithms"] = self.experiment_data.algorithms
         return param_updates
 
+    def update_algorithm_names(self, mapping):
+        super().update_algorithm_names(mapping)
+        self.param.algorithms.objects = self.experiment_data.algorithms
+        self.algorithms = [mapping[x] for x in self.algorithms]
+
 
     def get_view_table(self):
         return self.table[["Index"] + self.algorithms]

@@ -99,6 +99,8 @@ class ExperimentData():
                 self.attribute_info[attribute] = a
 
             self.logger.info(f"Done reading in experiment data from {properties_file}")
+            self.original_data = self.data
+            self.original_algorithms = self.algorithms
 
         except Exception as ex:
             self.algorithms = []
@@ -110,7 +112,7 @@ class ExperimentData():
 
             if properties_file != "":
                 l = logging.getLogger("panel")
-                l.warning(f"Could not find {properties_file}")
+                l.warning(f"Could not find properties file '{properties_file}'")
 
 
     def compute_ipc_score(self):
@@ -147,3 +149,11 @@ class ExperimentData():
                 a.reset_aggregator()
             else:
                 a.set_aggregator(aggregators[name])
+
+    def rename_columns(self, custom_algorithm_names):
+        old = self.data.columns
+        self.data = self.original_data.rename(columns = custom_algorithm_names)
+        new = self.data.columns
+        self.algorithms = [custom_algorithm_names[x] if x in custom_algorithm_names.keys() else x for x in self.original_algorithms]
+        return {o:n for (o,n) in zip(old,new) }
+

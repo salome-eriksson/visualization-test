@@ -48,6 +48,11 @@ class ProblemTablereport(Report):
         self.data_view.formatters = { alg : {'type' : 'textarea'} for alg in self.experiment_data.algorithms }
         return param_updates
 
+    def update_algorithm_names(self, mapping):
+        self.param.algorithms.objects = self.experiment_data.algorithms
+        self.algorithms = [mapping[x] for x in self.algorithms]
+
+
 
     @param.depends('domain', watch=True)
     def update_problems(self):

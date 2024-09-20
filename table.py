@@ -95,6 +95,9 @@ class Tablereport(PRPopupReport):
 
         return param_updates
 
+    def update_algorithm_names(self, mapping):
+        self.table.rename(columns = mapping, inplace=True)
+        self.computed["__columns"] = [mapping[x] for x in self.computed["__columns"]]
 
     def get_view_table(self):
         return self.table

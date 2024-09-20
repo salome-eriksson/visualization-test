@@ -24,7 +24,9 @@ class ReportViewer(param.Parameterized):
     custom_min_wins = param.Dict(default={},
         doc="Dictionary mapping (numeric) attributes to True/False, indicating whether a lower value is better or not.")
     custom_aggregators = param.Dict(default={},
-        doc="Dictionary mapping (numeric) attributes to the type of aggregation (sum, mean, gmean)")
+        doc="Dictionary mapping (numeric) attributes to the type of aggregation (sum, mean, gmean).")
+    custom_algorithm_names = param.Dict(default={},
+        doc="Dictionary mapping original algorithm names to custom names.")
     param_config = param.String(precedence=-1)
 
 
@@ -62,7 +64,7 @@ class ReportViewer(param.Parameterized):
         #register callback for creating config string for url
         self.param.watch(self.update_param_config,
             ["properties_file", "report_type", "custom_min_wins",
-             "custom_aggregators"])
+             "custom_aggregators", "custom_algorithm_names"])
         self.reports["Absolute Report"].param.watch(
             self.update_param_config,
             ["attributes", "domains", "algorithms", "precision"])
@@ -91,11 +93,13 @@ class ReportViewer(param.Parameterized):
             r.update_experiment_data(self.experiment_data)
 
 
-    @param.depends('custom_min_wins', 'custom_aggregators', watch=True)
+    @param.depends('custom_min_wins', 'custom_aggregators', 'custom_algorithm_names', watch=True)
     def update_attributes(self):
         self.experiment_data.set_attribute_customizations(
             self.custom_min_wins, self.custom_aggregators)
+        mapping = self.experiment_data.rename_columns(self.custom_algorithm_names)
         for r in self.reports.values():
+            r.update_algorithm_names(mapping)
             r.view_data()
 
 
@@ -117,6 +121,7 @@ class ReportViewer(param.Parameterized):
         params["version"] = "1.0"
         params["custom_min_wins"] = self.custom_min_wins
         params["custom_aggregators"] = self.custom_aggregators
+        params["custom_algorithm_names"] = self.custom_algorithm_names
         self.param_config = base64.urlsafe_b64encode(zlib.compress(json.dumps(params).encode())).decode()
         self.setting_param_config = False
 
@@ -133,6 +138,7 @@ class ReportViewer(param.Parameterized):
                 "report_type": sorted(self.reports.keys())[int(params.pop("report_type"))],
                 "custom_min_wins": params.pop("custom_min_wins"),
                 "custom_aggregators": params.pop("custom_aggregators"),
+                "custom_algorithm_names": params.pop("custom_algorithm_names"),
             })
             assert(params.pop("version") == "1.0")
             self.reports[self.report_type].set_params_from_dict(params)
