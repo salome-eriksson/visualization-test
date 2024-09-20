@@ -44,7 +44,12 @@ class WiseTablereport(PRPopupReport):
 
                 Shows on how many domains/problems the row entry algorithm is
                 better than the column entry algorithm. Clicking on a cell
-                gives a detailed comparison table below the domain/task wise tables.
+                gives a detailed comparison table below the domain/task wise
+                tables.
+
+                When having a taskwise comparison open, klicking on a row will
+                open a ProblemReport comparing all attributes for this specific
+                problem.
             """)
         )
 
