@@ -13,6 +13,7 @@ from experimentdata import ExperimentData
 from problemtable import ProblemTablereport
 from scatter import Scatterplot
 from wisetable import WiseTablereport
+from cactus import Cactusplot
 
 pn.extension('floatpanel')
 pn.extension('tabulator')
@@ -42,8 +43,10 @@ class ReportViewer(param.Parameterized):
             "Diff Report" : DiffTablereport(name="Diff Report"),
             "Problem Report" : ProblemTablereport(name="Problem Report"),
             "Scatter Plot" : Scatterplot(name="Scatter Plot"),
-            "Wise Report": WiseTablereport(name="Wise Report")
+            "Wise Report": WiseTablereport(name="Wise Report"),
+            "Cactus Plot": Cactusplot(name="Cactus Plot")
         }
+
         self.param.report_type.objects = [name for name in self.reports.keys()]
         self.report_type = self.param.report_type.objects[0]
         self.previous_report_type = self.report_type
@@ -84,6 +87,10 @@ class ReportViewer(param.Parameterized):
         self.reports["Wise Report"].param.watch(
             self.update_param_config,
             ["attribute"])
+        self.reports["Cactus Plot"].param.watch(
+            self.update_param_config,
+            ["attribute", "algorithms", "x_scale", "y_scale", "autoscale",
+             "x_range", "y_range", "replace_zero", "x_size", "y_size", "colors"])
 
 
     @param.depends('properties_file', watch=True)
