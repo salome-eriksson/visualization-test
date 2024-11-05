@@ -12,7 +12,7 @@ import re
 
 from experimentdata import ExperimentData
 from problemtable import ProblemTablereport
-from prpopupreport import PRPopupReport
+from report import Report
 
 hv.extension('bokeh')
 
@@ -31,7 +31,7 @@ def get_num_true(df):
         return vc[True]
 
 
-class Scatterplot(PRPopupReport):
+class Scatterplot(Report):
     x_attribute = param.Selector(default="--")
     y_attribute = param.Selector(default="--")
     entries_list = param.String(default="",
@@ -164,10 +164,16 @@ class Scatterplot(PRPopupReport):
         new_set = set(new)
         change = list((old_set - new_set) | (new_set - old_set))
         if change:
-            domain = df.iloc[change[0]]['domain']
-            problem = df.iloc[change[0]]['problem']
-            algorithms = df.iloc[change[0]]['algs']
-            self.add_problem_report_popup(domain, problem, algorithms)
+            dom = df.iloc[change[0]]['domain']
+            prob = df.iloc[change[0]]['problem']
+            param_dict = {
+                "domain" : dom,
+                "problem": prob,
+                "algorithms": df.iloc[change[0]]['algs']
+            }
+            problem_report = ProblemTablereport(self.experiment_data, param_dict,
+                sizing_mode = "stretch_width")
+            self.add_popup(problem_report.view_data, name=f"{dom} - {prob}")
 
 
     def update_data_view(self):

@@ -5,9 +5,9 @@ import pandas as pd
 import panel as pn
 
 from experimentdata import ExperimentData
-from prpopupreport import PRPopupReport
+from report import Report
 
-class WiseTablereport(PRPopupReport):
+class WiseTablereport(Report):
     attribute = param.Selector(default="--")
 
 

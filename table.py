@@ -8,14 +8,14 @@ from collections import defaultdict
 import panel as pn
 from scipy import stats
 
-from prpopupreport import PRPopupReport
 from experimentdata import ExperimentData
 from problemtable import ProblemTablereport
+from report import Report
 
 # TODO: is replacing 0 with something like 0.0001 a valid approach for gmean?
 # TODO: fix warnings for gmean
 
-class Tablereport(PRPopupReport):
+class Tablereport(Report):
     attributes = param.ListSelector()
     domains = param.ListSelector()
     precision = param.Integer(label="Floating point precision", default=3)
@@ -145,7 +145,14 @@ class Tablereport(PRPopupReport):
 
         # clicked on concrete problem -> open problem wise report
         if problem != "--":
-            self.add_problem_report_popup(domain, problem, self.get_current_columns())
+            param_dict = {
+                "domain" : domain,
+                "problem": problem,
+                "algorithms": self.get_current_columns()
+            }
+            problem_report = ProblemTablereport(self.experiment_data, param_dict,
+                sizing_mode = "stretch_width")
+            self.add_popup(problem_report.view_data, name=f"{domain} - {problem}")
             return
 
         # clicked on domain aggregate -> (un)fold that domain for that attribute

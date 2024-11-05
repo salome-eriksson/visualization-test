@@ -11,6 +11,7 @@ class Report(param.Parameterized):
         self.experiment_data = experiment_data
         self.param_view = pn.pane.Str("Placeholder Param View")
         self.data_view = pn.pane.Str("Placeholder Data View")
+        self.data_view_column = pn.Column(self.data_view, pn.Column(height=0, width=0), sizing_mode='stretch_both', scroll=True)
 
 
     def update_experiment_data(self, new_data):
@@ -36,10 +37,11 @@ class Report(param.Parameterized):
     def view_data(self):
         try:
             self.update_data_view()
-            return self.data_view
         except Exception as ex:
-            self.logger.exception('Got exception on main handler')
+            self.logger.exception('Got exception updating the data view')
             raise
+        self.data_view_column[0] = self.data_view
+        return self.data_view_column
 
 
     # updates self.param_view
@@ -51,10 +53,16 @@ class Report(param.Parameterized):
     def update_data_view(self):
         pass
 
-
-    # used by ReportWithPopup to remove the Problemtablereports
+    # remove popups when report type changes
     def deactivate(self):
-        pass
+        self.data_view_column[1].clear()
+
+
+    def add_popup(self, panel, name):
+        self.data_view_column[1].append(pn.layout.FloatPanel(
+            panel, name = name, contained = False, height = 750, width = 750,
+            position = "center", config = {"closeOnEscape" : True}
+        ))
 
 
     def get_params_as_dict(self):
