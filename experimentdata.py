@@ -59,7 +59,7 @@ PREDEFINED_ATTRIBUTES = {
 
 class ExperimentData():
     def __init__(self, properties_file=""):
-        self.logger = logging.getLogger("panel")
+        self.logger = logging.getLogger("visualizer")
         try:
             self.logger.info(f"Reading in experiment data from {properties_file}")
             self.data = pd.read_json(properties_file, orient="index")
@@ -111,8 +111,7 @@ class ExperimentData():
             self.data = pd.DataFrame(index= pd.MultiIndex.from_tuples([],names = ["attribute","domain","problem"]))
 
             if properties_file != "":
-                l = logging.getLogger("panel")
-                l.warning(f"Could not find properties file '{properties_file}'")
+                self.logger.warning(f"Could not find properties file '{properties_file}'")
 
 
     def compute_ipc_score(self):

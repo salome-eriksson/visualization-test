@@ -1,3 +1,4 @@
+import logging
 import panel as pn
 
 from report import Report
@@ -12,10 +13,13 @@ class PRPopupReport(Report):
 
 
     def view_data(self):
-        self.update_data_view()
-        self.data_view_column[0] = self.data_view
-        return self.data_view_column
-
+        try:
+            self.update_data_view()
+            self.data_view_column[0] = self.data_view
+            return self.data_view_column
+        except Exception as ex:
+            self.logger.exception('Got exception on main handler')
+            raise
 
     def add_problem_report_popup(self, domain, problem, algorithms):
         param_dict = {

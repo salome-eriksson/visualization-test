@@ -1,3 +1,4 @@
+import logging
 import param
 import panel as pn
 
@@ -6,6 +7,7 @@ from experimentdata import ExperimentData
 class Report(param.Parameterized):
     def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), **params):
         super().__init__(**params)
+        self.logger = logging.getLogger("visualizer")
         self.experiment_data = experiment_data
         self.param_view = pn.pane.Str("Placeholder Param View")
         self.data_view = pn.pane.Str("Placeholder Data View")
@@ -32,8 +34,12 @@ class Report(param.Parameterized):
 
 
     def view_data(self):
-        self.update_data_view()
-        return self.data_view
+        try:
+            self.update_data_view()
+            return self.data_view
+        except Exception as ex:
+            self.logger.exception('Got exception on main handler')
+            raise
 
 
     # updates self.param_view

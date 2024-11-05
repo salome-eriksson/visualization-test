@@ -33,7 +33,6 @@ class ReportViewer(param.Parameterized):
 
     def __init__(self, **params):
         super().__init__(**params)
-        self.logger = logging.getLogger("panel")
 
         self.setting_param_config = False
         self.setting_params = False
@@ -155,8 +154,25 @@ class ReportViewer(param.Parameterized):
 
 
 
+# set up terminal to output visualizer logger
+terminal_options = {
+    "disableStdin": True,
+    "cursorBlink": False,
+   "cursorInactiveStyle": "none",
+    "cursorStyle": "bar"
+}
+terminal = pn.widgets.Terminal(height=150, options=terminal_options, sizing_mode='stretch_width')
+stream_handler = logging.StreamHandler(terminal)
+stream_handler.terminator = "  \n"
+formatter = logging.Formatter("%(asctime)s [%(levelname)s]: %(message)s")
+stream_handler.setFormatter(formatter)
+stream_handler.setLevel(logging.INFO)
+logger = logging.getLogger("visualizer")
+logger.setLevel(logging.INFO)
+logger.addHandler(stream_handler)
+
+
 viewer = ReportViewer()
-debugger = pn.widgets.Debugger(name='debugger', level=logging.INFO, logger_names=["panel"], only_last=False)
-view = pn.Column(viewer.view, debugger)
+view = pn.Column(viewer.view, terminal)
 pn.state.location.sync(viewer, { "param_config" : "c" })
 view.servable()
