@@ -49,6 +49,8 @@ PREDEFINED_ATTRIBUTES = {
   "score_expansions" : (False, "sum"),
   "score_generated" : (False, "sum"),
   "score_memory" : (False, "sum"),
+  "score_planner_memory" : (False, "sum"),
+  "score_planner_time" : (False, "sum"),
   "score_search_time" : (False, "sum"),
   "score_total_time" : (False, "sum"),
   "search_time" : (True, "gmean"),
