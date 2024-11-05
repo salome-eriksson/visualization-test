@@ -197,8 +197,7 @@ class Scatterplot(Report):
         overall_frame = pd.concat(frames)
         overall_frame.replace(0, self.replace_zero, inplace=True)
         overall_frame.sort_index(level=0, inplace=True)
-        overall_frame['yrel'] = overall_frame.y.div(overall_frame.x)
-        overall_frame.loc[~np.isfinite(overall_frame['yrel'].astype(float)), 'yrel'] = np.nan
+        overall_frame['yrel'] = overall_frame.y.div(overall_frame.x.replace(0,  np.nan))
         xcol = 'x'
         ycol = 'y' if not self.relative else 'yrel'
 
