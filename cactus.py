@@ -30,6 +30,7 @@ class Cactusplot(Report):
     x_size = param.Integer(default = 500)
     y_size = param.Integer(default = 500)
     colors = param.List(default=COLORS)
+    line_width = param.Integer(default = 2, bounds=(1,10))
 
 
     def __init__(self, experiment_data = ExperimentData(), param_dict = dict(), **params):
@@ -49,6 +50,7 @@ class Cactusplot(Report):
             pn.Param(self.param.x_size),
             pn.Param(self.param.y_size),
             pn.Param(self.param.colors),
+            pn.Param(self.param.line_width),
             pn.pane.Markdown("""
                 ### Information
                 TODO
@@ -114,7 +116,7 @@ class Cactusplot(Report):
 
         # Define axis labels
         xlabel = self.attribute
-        ylabel = "amount"
+        ylabel = "coverage"
 
         # Compute min and max values.
         xmax = overall_frame['x'].max()
@@ -152,15 +154,18 @@ class Cactusplot(Report):
         plot = figure(width=self.x_size, height=self.y_size + 23*math.ceil(len(indices)/ncols),
                       x_axis_label=xlabel, y_axis_label = ylabel,
                       x_axis_type = self.x_scale, y_axis_type = self.y_scale,
-                      x_range = self.x_range, y_range = self.y_range)
+                      x_range = self.x_range, y_range = self.y_range,
+                      active_scroll = "wheel_zoom")
 
 
         legend_items = []
         for i, index in enumerate(indices):
-            df = overall_frame.loc[[index]]
-            p = plot.step(x='x', y='y', source=df,
-                line_color=self.colors[i%len(COLORS)])
-            legend_items.append(LegendItem(label=index, renderers = [plot.renderers[i]]))
+            df = overall_frame.loc[[index]].reset_index()
+            p = plot.step(x='x', y='y', source=df, line_width=self.line_width,
+                line_color=self.colors[i%len(COLORS)], mode="after")
+            # the line plot is invisible but allows for hover (step does not offer support for hover: https://github.com/bokeh/bokeh/wiki/Glyph-Hit-Testing-Census)
+            p = plot.line(x='x', y='y', source=df, line_alpha=0)
+            legend_items.append(LegendItem(label=index, renderers = [plot.renderers[2*i]]))
 
 
         # legend
@@ -169,11 +174,13 @@ class Cactusplot(Report):
         plot.add_layout(legend, 'below')
         plot.legend.ncols = ncols
 
-        # hover info - not working at the moment
-        # ~ plot.add_tools(HoverTool(tooltips=[
-            # ~ ('x', '@x'),
-            # ~ ('y', '@y'),
-            # ~ ]))
+
+        # hover info
+        plot.add_tools(HoverTool(tooltips=[
+            (self.attribute, '@x'),
+            ('coverage', '@y'),
+            ('algorithm', '@name'),
+            ]))
 
         self.data_view = pn.Column(plot, sizing_mode="fixed", scroll=True)
         self.data_view_in_progress = False

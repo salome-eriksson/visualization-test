@@ -272,7 +272,8 @@ class Scatterplot(Report):
         plot = figure(width=self.x_size, height=self.y_size + 23*math.ceil(len(indices)/ncols),
                       x_axis_label=xlabel, y_axis_label = ylabel,
                       x_axis_type = self.x_scale, y_axis_type = self.y_scale,
-                      x_range = self.x_range, y_range = self.y_range)
+                      x_range = self.x_range, y_range = self.y_range,
+                      active_scroll = "wheel_zoom")
 
         # helper lines
         plot.renderers.extend([Span(location=x_failed, dimension='height', line_color='red')])
