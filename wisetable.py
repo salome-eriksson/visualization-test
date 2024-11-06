@@ -5,6 +5,7 @@ import pandas as pd
 import panel as pn
 
 from experimentdata import ExperimentData
+from problemtable import ProblemTablereport
 from report import Report
 
 class WiseTablereport(Report):
@@ -24,17 +25,12 @@ class WiseTablereport(Report):
         self.task_wise = pn.widgets.Tabulator(pd.DataFrame(), disabled = True, sortable=False, pagination="remote", page_size=1000)
         self.task_wise.style.apply(func=partial(self.style_wise_by_row, table_type="task"), axis=1)
         self.task_wise.on_click(self.on_task_wise_click_callback)
-        self.comparison = pn.widgets.Tabulator(pd.DataFrame(), disabled = True, pagination="remote", page_size=100)
-        self.comparison.on_click(self.on_comparison_click_callback)
-        self.current_comparison = None
 
         self.data_view = pn.Column(
             pn.pane.HTML("Domain Wise", styles={'font-size': '12pt', 'font-family': 'Arial', 'font-weight': 'bold', 'padding-left': '10px'}),
             self.domain_wise,
             pn.pane.HTML("Task Wise", styles={'font-size': '12pt', 'font-family': 'Arial', 'font-weight': 'bold', 'padding-left': '10px'}),
             self.task_wise,
-            pn.pane.HTML("Comparison", styles={'font-size': '12pt', 'font-family': 'Arial', 'font-weight': 'bold', 'padding-left': '10px'}),
-            self.comparison
         )
 
         self.param_view = pn.Column(
@@ -64,7 +60,6 @@ class WiseTablereport(Report):
         d = { a1 : {a2 : 0 for a2 in self.experiment_data.algorithms} for a1 in self.experiment_data.algorithms }
         self.task_wise_table = pd.DataFrame(d)
         self.domain_wise_table = pd.DataFrame(d)
-        self.current_comparison = None
 
         return param_updates
 
@@ -88,10 +83,10 @@ class WiseTablereport(Report):
         col_alg = e.column
         if col_alg not in self.domain_wise_table.columns:
             return
-        self.current_comparison = "domain"
-        self.comparison.sorters = []
-        self.comparison.value = pd.DataFrame()
-        self.comparison.value = self.per_domain_table[[(row_alg, col_alg, "win")]]
+        comparison = pn.widgets.Tabulator(
+            self.per_domain_table[[(row_alg, col_alg, "win")]].copy(),
+            disabled = True, pagination="remote", page_size=100)
+        self.add_popup(comparison, name=f"Domain comparison {row_alg} vs {col_alg}")
 
 
     def on_task_wise_click_callback(self, e):
@@ -100,21 +95,25 @@ class WiseTablereport(Report):
         col_alg = e.column
         if col_alg not in self.task_wise_table.columns:
             return
-        self.current_comparison = "problem"
-        self.comparison.sorters = []
-        self.comparison.value = pd.DataFrame()
-        self.comparison.value = self.per_task_table[list({row_alg, col_alg, (row_alg, col_alg)})]
+        comparison = pn.widgets.Tabulator(
+            self.per_task_table[list({row_alg, col_alg, (row_alg, col_alg)})].copy(),
+            disabled = True, pagination="remote", page_size=100)
+        comparison.on_click(partial(self.on_comparison_click_callback, df=comparison.value))
+        self.add_popup(comparison, name=f"Task comparison {row_alg} vs {col_alg}")
 
 
-    def on_comparison_click_callback(self, e):
-        self.comparison.selection = []
-        if self.current_comparison == "domain":
-            return
-        row = self.comparison.value.iloc[e.row]
-        domain = row.name[0]
-        problem = row.name[1]
-        algorithms = list(set(row.keys()).intersection(set(self.experiment_data.algorithms)))
-        self.add_problem_report_popup(domain, problem, algorithms)
+    def on_comparison_click_callback(self, e, df):
+        row = df.iloc[e.row]
+        dom = row.name[0]
+        prob = row.name[1]
+        param_dict = {
+          "domain": dom,
+          "problem": prob,
+          "algorithms": list(set(row.keys()).intersection(set(self.experiment_data.algorithms)))
+        }
+        problem_report = ProblemTablereport(self.experiment_data, param_dict,
+            sizing_mode = "stretch_width")
+        self.add_popup(problem_report.view_data, name=f"{dom} - {prob}")
 
 
     def update_data_view(self):
@@ -142,7 +141,6 @@ class WiseTablereport(Report):
 
         self.task_wise.value = self.task_wise_table[self.experiment_data.algorithms]
         self.domain_wise.value = self.domain_wise_table[self.experiment_data.algorithms]
-        self.comparison.value = pd.DataFrame()
 
     def get_params_as_dict(self):
         return super().get_params_as_dict()
