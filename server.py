@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import base64 # for encoding the compressed json parameter dict as url
+from io import BytesIO # for reading in bytestrings from file upload
 import json # for dumping the parameter dict as json
 import logging
 import param
@@ -21,7 +22,9 @@ pn.extension('terminal')
 
 class ReportViewer(param.Parameterized):
     report_type = param.Selector()
-    properties_file = param.String(default="")
+    properties_upload = param.Selector(objects=["file", "url"], default="url")
+    properties_url = param.String(default="", label="")
+    properties_file = param.FileSelector(precedence=-1)
     custom_min_wins = param.Dict(default={},
         doc="Dictionary mapping (numeric) attributes to True/False, indicating whether a lower value is better or not.")
     custom_aggregators = param.Dict(default={},
@@ -53,9 +56,21 @@ class ReportViewer(param.Parameterized):
         self.views = dict()
         for key, r in self.reports.items():
             self.views[key] = pn.Row(
-                                  pn.Column(pn.Param(self.param, name=""), r.view_param, width=500, scroll=True),
-                                  pn.panel(r.view_data, defer_load=True, scroll=True), sizing_mode='stretch_both'
-                              )
+                pn.Column(
+                    pn.Param(self.param.report_type, margin=(0,10)),
+                    pn.pane.HTML("<label>Properties</label>", styles={'padding-left': '10px'}, margin=(0,10)),
+                    pn.Param(self.param.properties_upload, widgets = {'properties_upload': {'widget_type': pn.widgets.RadioBoxGroup, 'inline': True}}, margin=(0,10)),
+                    pn.Param(self.param.properties_url, margin=(0,10)),
+                    pn.Param(self.param.properties_file, widgets = {'properties_file': pn.widgets.FileInput}, margin=(0,10)),
+                    pn.Param(self.param.custom_min_wins, margin=(0,10)),
+                    pn.Param(self.param.custom_aggregators, margin=(0,10)),
+                    pn.Param(self.param.custom_algorithm_names, margin=(0,10)),
+                    r.view_param,
+                    width=500,
+                    scroll=True),
+                pn.panel(r.view_data, defer_load=True, scroll=True),
+                sizing_mode='stretch_both')
+
         if self.param_config:
             set_from_param_config()
         else:
@@ -65,8 +80,9 @@ class ReportViewer(param.Parameterized):
 
         #register callback for creating config string for url
         self.param.watch(self.update_param_config,
-            ["properties_file", "report_type", "custom_min_wins",
-             "custom_aggregators", "custom_algorithm_names"])
+            ["properties_upload", "properties_url", "properties_file",
+             "report_type", "custom_min_wins", "custom_aggregators",
+             "custom_algorithm_names"])
         self.reports["Absolute Report"].param.watch(
             self.update_param_config,
             ["attributes", "domains", "algorithms", "precision"])
@@ -91,10 +107,24 @@ class ReportViewer(param.Parameterized):
             ["attribute", "algorithms", "x_scale", "y_scale", "autoscale",
              "x_range", "y_range", "replace_zero", "x_size", "y_size", "colors"])
 
+    @param.depends('properties_upload', watch=True)
+    def update_properties_upload(self):
+        if self.properties_upload == "url":
+            self.param.properties_url.precedence = None
+            self.param.properties_file.precedence = -1
+            self.properties_file = None
+        else:
+            self.param.properties_url.precedence = -1
+            self.param.properties_file.precedence = None
+            self.properties_url = ""
 
-    @param.depends('properties_file', watch=True)
+    @param.depends('properties_url', 'properties_file', watch=True)
     def update_property_file(self):
-        self.experiment_data = ExperimentData(self.properties_file)
+        if self.properties_upload == "url":
+            self.experiment_data = ExperimentData(self.properties_url)
+        else:
+            print("reading from bytestring")
+            self.experiment_data = ExperimentData(BytesIO(self.properties_file))
         for r in self.reports.values():
             r.update_experiment_data(self.experiment_data)
 
@@ -120,9 +150,15 @@ class ReportViewer(param.Parameterized):
         if self.setting_params:
             return
         self.setting_param_config = True
+
+        #if a local file is used, we cannot share the url --> don't create a config string
+        if self.properties_upload == "file":
+            self.param_config = ""
+            return
+
         params = self.reports[self.report_type].get_params_as_dict()
-        if self.properties_file != self.param.properties_file.default:
-            params["properties_file"] = self.properties_file
+        if self.properties_url != self.param.properties_url.default:
+            params["properties_url"] = self.properties_url
         params["report_type"] = sorted(self.reports.keys()).index(self.report_type)
         params["version"] = "1.0"
         params["custom_min_wins"] = self.custom_min_wins
@@ -140,7 +176,7 @@ class ReportViewer(param.Parameterized):
         try:
             params = json.loads(zlib.decompress(base64.urlsafe_b64decode(self.param_config.encode())))
             self.param.update({
-                "properties_file": params.pop("properties_file"),
+                "properties_url": params.pop("properties_url"),
                 "report_type": sorted(self.reports.keys())[int(params.pop("report_type"))],
                 "custom_min_wins": params.pop("custom_min_wins"),
                 "custom_aggregators": params.pop("custom_aggregators"),
@@ -176,3 +212,6 @@ viewer = ReportViewer()
 view = pn.Column(viewer.view, terminal)
 pn.state.location.sync(viewer, { "param_config" : "c" })
 view.servable()
+
+#to enable up to 200MB files, call the server with
+#panel serve server.py --websocket-max-message-size=209715200
