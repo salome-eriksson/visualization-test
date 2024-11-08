@@ -58,8 +58,15 @@ class ReportViewer(param.Parameterized):
             self.views[key] = pn.Row(
                 pn.Column(
                     pn.Param(self.param.report_type, margin=(0,10)),
-                    pn.pane.HTML("<label>Properties</label>", styles={'padding-left': '10px'}, margin=(0,10)),
-                    pn.Param(self.param.properties_upload, widgets = {'properties_upload': {'widget_type': pn.widgets.RadioBoxGroup, 'inline': True}}, margin=(0,10)),
+                    pn.Row(
+                        pn.pane.HTML("<label>Properties</label>", margin=(10,0,0,20)),
+                        pn.widgets.TooltipIcon(margin=(10,0,0,0), value=
+                            "Expects a json file or an archive containing a json "
+                            "file. It can either be uploaded or linked by url. "
+                            "If url is used, you can share your current report "
+                            "view by copying the link shown in the browser.")
+                    ),
+                    pn.Param(self.param.properties_upload, widgets = {'properties_upload': {'widget_type': pn.widgets.RadioBoxGroup, 'inline': True}}, margin=(0,0,-8,10)),
                     pn.Param(self.param.properties_url, margin=(0,10)),
                     pn.Param(self.param.properties_file, widgets = {'properties_file': pn.widgets.FileInput}, margin=(0,10)),
                     pn.Param(self.param.custom_min_wins, margin=(0,10)),
